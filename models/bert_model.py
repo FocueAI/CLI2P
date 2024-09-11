@@ -237,7 +237,7 @@ class BertLayer(nn.Module):
         self.intermediate = BertIntermediate(config)
         self.output = BertOutput(config)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None): # hidden_states.shape=[1,52,768], attention_mask.shape=[1,1,1,52] 正常字符处为0，padding部分为 -10000!   head_mask = None
         attention_outputs = self.attention(hidden_states, attention_mask, head_mask)
         attention_output = attention_outputs[0]
         intermediate_output = self.intermediate(attention_output)
@@ -256,7 +256,7 @@ class BertEncoder(nn.Module):
         self.grad_checkpointing = False
         self.layer = nn.ModuleList([BertLayer(config) for _ in range(config.num_hidden_layers)])
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None): # hidden_states.shape=(1,52,768)
         all_hidden_states = ()
         all_attentions = ()
         for i, layer_module in enumerate(self.layer):
@@ -265,7 +265,7 @@ class BertEncoder(nn.Module):
 
             if self.grad_checkpointing and not torch.jit.is_scripting():
                 layer_outputs = checkpoint(layer_module, hidden_states, attention_mask, head_mask[i])
-            else:
+            else: # go this way!!!!
                 layer_outputs = layer_module(hidden_states, attention_mask, head_mask[i])
             if not isinstance(layer_outputs, tuple):
                 layer_outputs = (layer_outputs, )
@@ -437,7 +437,7 @@ class BertModel(BertPreTrainedModel):
         self.encoder.grad_checkpointing = enable
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None):
-        if attention_mask is None:
+        if attention_mask is None: # .shape=[1, 52]
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)
@@ -447,7 +447,7 @@ class BertModel(BertPreTrainedModel):
         # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
         # this attention mask is more simple than the triangular masking of causal attention
         # used in OpenAI GPT, we just need to prepare the broadcast dimension here.
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
+        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2) # torch.Size([1, 1, 1, 52])
 
         # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
         # masked positions, this operation will create a tensor which is 0.0 for
@@ -455,7 +455,7 @@ class BertModel(BertPreTrainedModel):
         # Since we are adding it to the raw scores before the softmax, this is
         # effectively the same as removing these entirely.
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype) # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0  # mask的位置 0与1 做反转
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -469,11 +469,11 @@ class BertModel(BertPreTrainedModel):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1).unsqueeze(-1)  # We can specify head_mask for each layer
             head_mask = head_mask.to(dtype=next(self.parameters()).dtype) # switch to fload if need + fp16 compatibility
-        else:
-            head_mask = [None] * self.config.num_hidden_layers
+        else: # go this way！
+            head_mask = [None] * self.config.num_hidden_layers  # self.config.num_hidden_layers=12
 
-        embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
-        encoder_outputs = self.encoder(embedding_output,
+        embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids) # embedding_output.shape=[batch=1, 句子统一长度=52, d_model=768]
+        encoder_outputs = self.encoder(embedding_output,           
                                        extended_attention_mask,
                                        head_mask=head_mask)
         sequence_output = encoder_outputs[0]

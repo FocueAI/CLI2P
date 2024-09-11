@@ -233,7 +233,7 @@ class VisualTransformer(nn.Module):
         self.input_resolution = input_resolution
         self.grid_size = (self.input_resolution // patch_size, self.input_resolution // patch_size)
         self.output_dim = output_dim
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False) # patch_size = 16
 
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
@@ -265,26 +265,26 @@ class VisualTransformer(nn.Module):
         x_masked_add = torch.cat([x0, x_masked], axis=1)
         return x_masked_add
 
-    def forward(self, x: torch.Tensor, mask_ratio: float = 0.0):
-        x = self.conv1(x)  # shape = [*, width, grid, grid]
-        x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
-        x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
-        x = x + self.positional_embedding.to(x.dtype)
+    def forward(self, x: torch.Tensor, mask_ratio: float = 0.0):  # x.shape = (1, 3, 224, 224)
+        x = self.conv1(x)  # shape = [*, width, grid, grid]       # x.shape = (1, 768, 14, 14)        (224-16)/16 + 1 = 14
+        x = x.reshape(x.shape[0], x.shape[1], -1)                 # x.shape = [1, 768, 14*14=196]
+        x = x.permute(0, 2, 1)  # shape = [1, 14*14=196, 768]
+        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*=1, grid ** 2 + 1=197, width=768] 在dim=1处并上一个随机值（该值在之后是可学习的!!!）
+        x = x + self.positional_embedding.to(x.dtype) # 这里的位置编码是可学习的（初始为随机值）-- 位置编码.shape=[197,768]  ===================> x.shape=[1, 197, 768]
         if mask_ratio != 0:
             x = self.random_masking(x, mask_ratio)
-        x = self.ln_pre(x)
+        x = self.ln_pre(x)   # LayerNorm 基操    x.shape = [1,197,768]
 
-        x = x.permute(1, 0, 2)  # NLD -> LND
-        x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
+        x = x.permute(1, 0, 2)  # NLD -> LND      x.shape = [seq_len=197, batch=1, d_model=768]
+        x = self.transformer(x) #                 x.shape = [seq_len=197, batch=1, d_model=768]  经过transformer, 输入输出 的shape 保持不变 
+        x = x.permute(1, 0, 2)  # LND -> NLD      x.shape = [batch=1, seq_len=197, d_model=768]   
 
-        x = self.ln_post(x[:, 0, :])
+        x = self.ln_post(x[:, 0, :]) # x[:,0,:].shape=[1, 768] （至于为什么是取seq中的0号位置的元素，请参照vit原论文）=====> LayerNorm 基操
 
-        if self.proj is not None:
-            x = x @ self.proj
+        if self.proj is not None:   # self.proj.shape = [768, 512]
+            x = x @ self.proj       # [1, 768] @ [768, 512] ===> [1,512] 相当于全连接操作!!
 
-        return x
+        return x  # x.shape = [1, 512]
 
 
 class CLIP(nn.Module):
@@ -324,7 +324,7 @@ class CLIP(nn.Module):
                 width=vision_width
             )
         else:
-            vision_heads = vision_width // vision_head_width
+            vision_heads = vision_width // vision_head_width   # 768 // 64 = 12
             self.visual = VisualTransformer(
                 input_resolution=image_resolution,
                 patch_size=vision_patch_size,
@@ -394,10 +394,10 @@ class CLIP(nn.Module):
         return self.visual(image.type(self.dtype), mask_ratio)
 
     def encode_text(self, text):                                  # ------------------------------------------------------------------ 文本编码器
-        pad_index = self.tokenizer.vocab['[PAD]']
-        attn_mask = text.ne(pad_index).type(self.dtype)
-        x = self.bert(text, attention_mask=attn_mask)[0].type(self.dtype) # [batch_size, seq_length, hidden_size]
-        return x[:, 0, :] @ self.text_projection
+        pad_index = self.tokenizer.vocab['[PAD]'] # 0
+        attn_mask = text.ne(pad_index).type(self.dtype)  # 将 非 pading的部分设置为1， padding部分设置为0
+        x = self.bert(text, attention_mask=attn_mask)[0].type(self.dtype) # text.shape=[1, 52], attn_mask.shape=[1,52] ================> x.shape=[1,52,768]
+        return x[:, 0, :] @ self.text_projection # [1,768] @ [768, 512] ====> [1, 512]
 
     def forward(self, image, text, mask_ratio=0):
         assert image is not None or text is not None, "text and image cannot both be None!"

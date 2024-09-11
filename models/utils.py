@@ -136,12 +136,12 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 52) -> torch.Lo
     if isinstance(texts, str):
         texts = [texts]
 
-    all_tokens = []
-    for text in texts:
+    all_tokens = []  # 当 texts=["杰尼龟"] ===============> all_tokens=[[101, 3345, 2225, 7991, 102]]
+    for text in texts: # _tokenizer.vocab['[CLS]']=101， _tokenizer.vocab['[SEP]']=102，   
         all_tokens.append([_tokenizer.vocab['[CLS]']] + _tokenizer.convert_tokens_to_ids(_tokenizer.tokenize(text))[
                                                         :context_length - 2] + [_tokenizer.vocab['[SEP]']])
 
-    result = torch.zeros(len(all_tokens), context_length, dtype=torch.long)
+    result = torch.zeros(len(all_tokens), context_length, dtype=torch.long)   # .shape=[1, 52]
 
     for i, tokens in enumerate(all_tokens):
         assert len(tokens) <= context_length
@@ -166,15 +166,15 @@ def image_transform(image_size=224):
 
 def create_model(model_name, checkpoint=None):
     vision_model, text_model = model_name.split('@')   # vision_model = 'ViT-B-16',  text_model = 'RoBERTa-wwm-ext-base-chinese'
-    # Initialize the model.
+    # ------------------------------------------- 图像编码器的相关配置 ---------------------------------------- # 
     vision_model_config_file = Path(
         __file__).parent / f"model_configs/{vision_model.replace('/', '-')}.json"
-    print('Loading vision model config from', vision_model_config_file)
+    print('Loading vision model config from', vision_model_config_file)  # WindowsPath('e:/explore/CLI2P/models/model_configs/ViT-B-16.json')
     assert os.path.exists(vision_model_config_file)
-
+    # ------------------------------------------- 文本编码器的相关配置 ---------------------------------------- # 
     text_model_config_file = Path(
         __file__).parent / f"model_configs/{text_model.replace('/', '-')}.json"
-    print('Loading text model config from', text_model_config_file)
+    print('Loading text model config from', text_model_config_file)   # WindowsPath('e:/explore/CLI2P/models/model_configs/RoBERTa-wwm-ext-base-chinese.json')
     assert os.path.exists(text_model_config_file)
 
     with open(vision_model_config_file, 'r') as fv, open(text_model_config_file, 'r') as ft:
@@ -184,7 +184,7 @@ def create_model(model_name, checkpoint=None):
     if isinstance(model_info['vision_layers'], str):
         model_info['vision_layers'] = eval(model_info['vision_layers'])
     print('Model info', model_info)
-    model = CLIP(**model_info)
+    model = CLIP(**model_info) # 引入关键性 模型
     convert_weights(model)
     if checkpoint:
         sd = checkpoint["state_dict"]

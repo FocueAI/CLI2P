@@ -241,9 +241,9 @@ class BasicTokenizer(object):
         # and generally don't have any Chinese data in them (there are Chinese
         # characters in the vocabulary because Wikipedia does have some Chinese
         # words in the English Wikipedia.).
-        text = self._tokenize_chinese_chars(text)
+        text = self._tokenize_chinese_chars(text)  # 在 汉字两边加上 空白字符
 
-        orig_tokens = whitespace_tokenize(text)
+        orig_tokens = whitespace_tokenize(text)  # 以空白字符 做字符的 切割------ 这就是上一步骤中在 汉字2边加上 空白字符的 用意
         split_tokens = []
         for token in orig_tokens:
             if self.do_lower_case:
