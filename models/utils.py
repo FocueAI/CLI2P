@@ -165,7 +165,7 @@ def image_transform(image_size=224):
 
 
 def create_model(model_name, checkpoint=None):
-    vision_model, text_model = model_name.split('@')
+    vision_model, text_model = model_name.split('@')   # vision_model = 'ViT-B-16',  text_model = 'RoBERTa-wwm-ext-base-chinese'
     # Initialize the model.
     vision_model_config_file = Path(
         __file__).parent / f"model_configs/{vision_model.replace('/', '-')}.json"
