@@ -29,7 +29,7 @@ class CLI2P(nn.Module):
             nn.Linear(512, 1024),  # 将潜在空间重构回1024维
             nn.Sigmoid() 
             
-        )
+        ).to(torch.float16)
         self.__dict__.update(self._defaults) # 新更新默认参数
         self.__dict__.update(kwarg)     # 在更新传入参数
         # 图文提取器            图像前处理器
