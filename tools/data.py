@@ -14,64 +14,64 @@ def load_dataset(dataset_path, train_own_data, train_ratio):
     types       = 0
     train_path  =  dataset_path            # os.path.join(dataset_path, 'images_background')
     # train_path  = os.path.join(dataset_path, 'images_background')
-    lines       = []
-    labels      = []
+    image_path_lines = [] 
+    text_path_lines =  []
+    labels      =      []
     
-    if train_own_data:
+    #-------------------------------------------------------------#
+    #   自己的数据集，遍历大循环
+    #-------------------------------------------------------------#
+    for character in os.listdir(train_path):
         #-------------------------------------------------------------#
-        #   自己的数据集，遍历大循环
+        #   对每张图片进行遍历 ---- 其中 character 为 最后一级文件夹  里面存放的图像 属于同一种类。。。。。
         #-------------------------------------------------------------#
-        for character in os.listdir(train_path):
-            #-------------------------------------------------------------#
-            #   对每张图片进行遍历 ---- 其中 character 为 最后一级文件夹  里面存放的图像 属于同一种类。。。。。
-            #-------------------------------------------------------------#
-            character_path = os.path.join(train_path, character)
-            for image in os.listdir(character_path):
-                lines.append(os.path.join(character_path, image))   # lines 存放着 图像的完整路径
-                labels.append(types)                                # labels 存放着 图像对应的标签类型 0,1,2,3,4....
-            types += 1  # 可见每一个最底层的文件夹，是一个类别
-    else:
-        #-------------------------------------------------------------#
-        #   Omniglot数据集，遍历大循环
-        #-------------------------------------------------------------#
-        for alphabet in os.listdir(train_path):
-            alphabet_path = os.path.join(train_path, alphabet)
-            #-------------------------------------------------------------#
-            #   Omniglot数据集，遍历小循环
-            #-------------------------------------------------------------#
-            for character in os.listdir(alphabet_path):
-                character_path = os.path.join(alphabet_path, character)
-                #-------------------------------------------------------------#
-                #   对每张图片进行遍历
-                #-------------------------------------------------------------#
-                for image in os.listdir(character_path):
-                    lines.append(os.path.join(character_path, image))
-                    labels.append(types)
-                types += 1
-
+        character_path = os.path.join(train_path, character)
+        for image in os.listdir(character_path):
+            raw_name, raw_extend_name = os.path.splitext(image)
+            if image.endswith(['.jpg','.png']):
+                image_path_lines.append(os.path.join(character_path, image))   # image_path_lines 存放着 图像的完整路径
+                assert os.path.exists(os.path.join(character_path, raw_name+'.txt'))
+            elif image.endswith('.txt'):
+                text_path_lines.append(os.path.join(character_path, image))    # text_path_lines 存放着 图像的完整路径
+                assert os.path.exists(os.path.join(character_path, raw_name+'.jpg')) or os.path.exists(os.path.join(character_path, raw_name+'.png'))
+            labels.append(types)                                # labels 存放着 图像对应的标签类型 0,1,2,3,4....
+        types += 1  # 可见每一个最底层的文件夹，是一个类别
+    assert len(image_path_lines) == len(text_path_lines)
+    
     #-------------------------------------------------------------#
     #   将获得的所有图像进行打乱。
     #-------------------------------------------------------------#
     random.seed(1)
-    shuffle_index = np.arange(len(lines), dtype=np.int32)
+    shuffle_index = np.arange(len(image_path_lines), dtype=np.int32)
     shuffle(shuffle_index)  # 将索引序号 打乱
     random.seed(None)
-    lines    = np.array(lines,dtype=object)  # 图像路径 数组
-    labels   = np.array(labels)              # 图像类别 数组 [0,1,2,3,4,...]
-    lines    = lines[shuffle_index]   # 打乱之后的 图像路径 数组  
-    labels   = labels[shuffle_index]  # 打乱之后的 图像类别 数组 （与图像路径是一一对应关系。。。。。）
+    
+    # 将所有的数据类型 ===> numpy 
+    image_path_lines  = np.array(image_path_lines,dtype=object)  # 图像路径 数组
+    text_path_lines   = np.array(text_path_lines,dtype=object)   # ocr识别文本路径 数组
+    labels            = np.array(labels)              # 图像类别 数组 [0,1,2,3,4,...]
+    
+    image_path_lines   = image_path_lines[shuffle_index]   # 打乱之后的 图像路径 数组  
+    text_path_lines    = text_path_lines[shuffle_index]   # 打乱之后的 图像路径 数组  
+    labels             = labels[shuffle_index]  # 打乱之后的 图像类别 数组 （与图像路径是一一对应关系。。。。。）
     
     #-------------------------------------------------------------#
     #   将训练集和验证集进行划分
     #-------------------------------------------------------------#
-    num_train           = int(len(lines)*train_ratio)
-
-    val_lines      = lines[num_train:]
-    val_labels     = labels[num_train:]
-
-    train_lines    = lines[:num_train]
-    train_labels   = labels[:num_train]
-    return train_lines, train_labels, val_lines, val_labels
+    num_train           = int(len(image_path_lines)*train_ratio)
+    
+    # -------划分出来的验证集部分
+    val_img_lines       = image_path_lines[num_train:]
+    val_text_lines      = text_path_lines[num_train:]
+    val_labels          = labels[num_train:]
+    
+    # -------划分出来的训练集部分
+    train_img_lines   = image_path_lines[:num_train]
+    train_text_lines  = text_path_lines[:num_train]
+    train_labels      = labels[:num_train]
+    
+    return train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels
+    # return train_lines, train_labels, val_lines, val_labels
 
 #---------------------------------------------------#
 #   对输入图像进行resize

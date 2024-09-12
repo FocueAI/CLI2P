@@ -14,11 +14,12 @@ def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
 
 class SiameseDataset(Dataset):
-    def __init__(self, input_shape, lines, labels, random, autoaugment_flag=True):
-        self.input_shape    = input_shape
-        self.train_lines    = lines
-        self.train_labels   = labels
-        self.types          = max(labels)
+    def __init__(self, input_shape, img_lines, text_lines, labels, random, autoaugment_flag=True):
+        self.input_shape     = input_shape
+        self.train_img_lines = img_lines
+        self.train_text_lines= text_lines       
+        self.train_labels    = labels
+        self.types           = max(labels) # 总共含有的类别数
 
         self.random         = random
         
@@ -31,31 +32,40 @@ class SiameseDataset(Dataset):
             self.center_crop = CenterCrop(input_shape)
 
     def __len__(self):
-        return len(self.train_lines)
+        return len(self.train_img_lines)
 
     def __getitem__(self, index):
+        """
+        获取 2对 图文对资源： 第1对是相似的图文对资源; 第2对是不相似的图文对资源
+        """
         batch_images_path = []
+        batch_textes_path = []
         #------------------------------------------#
         #   首先选取三张类别相同的图片
         #------------------------------------------#
-        c               = random.randint(0, self.types - 1)                     # 随机选择一个类别
-        selected_path   = self.train_lines[self.train_labels[:] == c]           # 找到该类别的所有图像 路径数据
-        while len(selected_path)<3:   # 如果该类别的数据小于3张---------> 就重新选择一个类别  -------------------> 看来每个类别的数据不能太少!!!!!
+        c               = random.randint(0, self.types - 1)                        # 随机选择一个类别
+        selected_img_path   = self.train_img_lines[self.train_labels[:] == c]      # 找到该类别的所有图像 路径数据
+        selected_text_path   = self.train_text_lines[self.train_labels[:] == c]      # 找到该类别的所有图像 路径数据
+        while len(selected_img_path)<3:   # 如果该类别的数据小于3张---------> 就重新选择一个类别  -------------------> 看来每个类别的数据不能太少!!!!!
             c               = random.randint(0, self.types - 1)
-            selected_path   = self.train_lines[self.train_labels[:] == c]
+            selected_img_path   = self.train_img_lines[self.train_labels[:] == c]
+            selected_text_path   = self.train_text_lines[self.train_labels[:] == c]
 
-        image_indexes = random.sample(range(0, len(selected_path)), 3)  # 在该类别中随机 拿出3张图像
+        selected_indexes = random.sample(range(0, len(selected_img_path)), 3)  # 在该类别中随机 拿出3张图像
         #------------------------------------------#
         #   取出两张类似的图片
-        #   对于这两张图片，网络应当输出1
+        #   对于这两张图片，网络应当输出1  --------------- 获取第一对 图文 对
         #------------------------------------------#
-        batch_images_path.append(selected_path[image_indexes[0]])  # 第 1 张  from 第 c 类
-        batch_images_path.append(selected_path[image_indexes[1]])  # 第 2 张  from 第 c 类
-
+        batch_images_path.append(selected_img_path[selected_indexes[0]])  # 第 1 张  from 第 c 类
+        batch_textes_path.append(selected_text_path[selected_indexes[0]]) 
+        
+        batch_images_path.append(selected_img_path[selected_indexes[1]])  # 第 2 张  from 第 c 类
+        batch_textes_path.append(selected_text_path[selected_indexes[1]]) 
+        
         #------------------------------------------#
         #   取出两张不类似的图片
         #------------------------------------------#
-        batch_images_path.append(selected_path[image_indexes[2]])  # 第 3 张  from 第 c 类
+        batch_images_path.append(selected_img_path[selected_indexes[2]])  # 第 3 张  from 第 c 类
         #------------------------------------------#
         #   取出与当前的小类别不同的类
         #------------------------------------------#
@@ -63,25 +73,29 @@ class SiameseDataset(Dataset):
         different_c.pop(c)
         different_c_index   = np.random.choice(range(0, self.types - 1), 1)
         current_c           = different_c[different_c_index[0]]  # 获取的当前 非 c 类 假定是 b 类
-        selected_path       = self.train_lines[self.train_labels == current_c] # 将当前 b 类的所有 图像路径列表获取到
-        while len(selected_path)<1:                         # 当 b 类图像 太少的时候。。。。。。。
+        selected_img_path       = self.train_img_lines[self.train_labels == current_c] # 将当前 b 类的所有 图像路径列表获取到
+        selected_text_path       = self.train_text_lines[self.train_labels == current_c]
+        while len(selected_img_path)<1:                         # 当 b 类图像 太少的时候。。。。。。。
             different_c_index   = np.random.choice(range(0, self.types - 1), 1)
             current_c           = different_c[different_c_index[0]]
-            selected_path       = self.train_lines[self.train_labels == current_c]  # 直到 找到 数量充足 的 非 c 类 为止
+            selected_img_path       = self.train_img_lines[self.train_labels == current_c]  # 直到 找到 数量充足 的 非 c 类 为止
+            selected_text_path       = self.train_text_lines[self.train_labels == current_c]
 
-        image_indexes = random.sample(range(0, len(selected_path)), 1)
-        batch_images_path.append(selected_path[image_indexes[0]]) # 第 4 张  from 第 非c 类
+        selected_indexes = random.sample(range(0, len(selected_img_path)), 1)
+        batch_images_path.append(selected_img_path[selected_indexes[0]]) # 第 4 张  from 第 非c 类
+        batch_textes_path.append(selected_text_path[selected_indexes[0]])
         
-        images, labels = self._convert_path_list_to_images_and_labels(batch_images_path)
+        images, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
         return images, labels
 
-    def _convert_path_list_to_images_and_labels(self, path_list):
+    def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list):
         #-------------------------------------------#
-        #   path_list 中有固定的4张图像    [类别a，类别a，类别a，类别b]
+        #   img_path_list 中有固定的4张图像     [类别a，类别a，类别a，类别b]
+        #   text_path_list 中也有固定的4个文本  [类别a，类别a，类别a，类别b]
         #   len(path_list)      = 4
         #   len(path_list) / 2  = 2
         #-------------------------------------------#
-        number_of_pairs = int(len(path_list) / 2)  # 也是固定的数字2， 即有 2对 的意思
+        number_of_pairs = int(len(img_path_list) / 2)  # 也是固定的数字2， 即有 2对 的意思
         #-------------------------------------------#
         #   定义网络的输入图片和标签
         #-------------------------------------------#                                                                                类别a                 类别a                   类别a                    类别b
@@ -96,7 +110,9 @@ class SiameseDataset(Dataset):
             #-------------------------------------------#
             #   将图片填充到输入1中
             #-------------------------------------------#
-            image = Image.open(path_list[pair * 2])     #  ------------- path_list[0,2]
+            image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]
+            with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
+                text = reader.readline().strip()
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -112,7 +128,10 @@ class SiameseDataset(Dataset):
             #-------------------------------------------#
             #   将图片填充到输入2中
             #-------------------------------------------#
-            image = Image.open(path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
+            image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
+            with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
+                text = reader.readline().strip()
+            # TODO: 今天先开发到这里了！ 明天继续！！！！！！------2024-9-12
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
