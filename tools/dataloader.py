@@ -16,10 +16,10 @@ def rand(a=0, b=1):
 class SiameseDataset(Dataset):
     def __init__(self, input_shape, img_lines, text_lines, labels, random, autoaugment_flag=True):
         self.input_shape     = input_shape
-        self.train_img_lines = img_lines
-        self.train_text_lines= text_lines       
-        self.train_labels    = labels
-        self.types           = max(labels) # 总共含有的类别数
+        self.train_img_lines = img_lines     # 所有图像 完整路径             |  [img1_path, img2_path, ... , imgn_path]
+        self.train_text_lines= text_lines    # 所有文本 完整路径             |  [txt1_path, txt2_path, ... , txtn_path]
+        self.train_labels    = labels        # 所有图像 or 文本 对应的 类别  |   [   0,         1,     ... ,     n    ]
+        self.types           = max(labels)   # 总共含有的类别数
 
         self.random         = random
         
@@ -45,7 +45,7 @@ class SiameseDataset(Dataset):
         #------------------------------------------#
         c               = random.randint(0, self.types - 1)                        # 随机选择一个类别
         selected_img_path   = self.train_img_lines[self.train_labels[:] == c]      # 找到该类别的所有图像 路径数据
-        selected_text_path   = self.train_text_lines[self.train_labels[:] == c]      # 找到该类别的所有图像 路径数据
+        selected_text_path   = self.train_text_lines[self.train_labels[:] == c]    # 找到该类别的所有图像 路径数据
         while len(selected_img_path)<3:   # 如果该类别的数据小于3张---------> 就重新选择一个类别  -------------------> 看来每个类别的数据不能太少!!!!!
             c               = random.randint(0, self.types - 1)
             selected_img_path   = self.train_img_lines[self.train_labels[:] == c]
@@ -88,10 +88,11 @@ class SiameseDataset(Dataset):
         images, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
         return images, labels
 
-    def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list):
+    def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list,  text_pad_str='卍', max_text_len=51):
         #-------------------------------------------#
-        #   img_path_list 中有固定的4张图像     [类别a，类别a，类别a，类别b]
-        #   text_path_list 中也有固定的4个文本  [类别a，类别a，类别a，类别b]
+        #   img_path_list  中有固定的4张图像     [类别a，类别a，类别a，类别b]
+        #   text_path_list 中也有固定的4个文本   [类别a，类别a，类别a，类别b]
+        #   当文本的长度不满51个字符时， 就在该文本串后面补充 '卍' 符号
         #   len(path_list)      = 4
         #   len(path_list) / 2  = 2
         #-------------------------------------------#
@@ -99,7 +100,8 @@ class SiameseDataset(Dataset):
         #-------------------------------------------#
         #   定义网络的输入图片和标签
         #-------------------------------------------#                                                                                类别a                 类别a                   类别a                    类别b
-        pairs_of_images = [np.zeros((number_of_pairs, 3, self.input_shape[0], self.input_shape[1])) for i in range(2)]  # [ [.shape=[通道数=3,h,w], .shape=[通道数=3,h,w],  [.shape=[通道数=3,h,w], .shape=[通道数=3,h,w]  ]  ====> 里面都为全 0 数据
+        pairs_of_images = [np.zeros((number_of_pairs, 3, self.input_shape[0], self.input_shape[1])) for i in range(2)]  # [ [.shape=[通道数=3,h,w],  .shape=[通道数=3,h,w],      [.shape=[通道数=3,h,w], .shape=[通道数=3,h,w]   ]  ====> 里面都为全 0 数据
+        pairs_of_texts  = [np.full((number_of_pairs, max_text_len),text_pad_str, dtype=object)  for _ in range(2)   ]           # [ [.shape=(max_text_len,), .shape=(max_text_len,)],   [.shape=(max_text_len,), .shape=(max_text_len,)]  ====>                                                   ]
         labels          = np.zeros((number_of_pairs, 1))                                                                # .shape=[组数=2，1]
 
         #-------------------------------------------#
@@ -110,9 +112,9 @@ class SiameseDataset(Dataset):
             #-------------------------------------------#
             #   将图片填充到输入1中
             #-------------------------------------------#
-            image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]
+            image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]   类别a - 图像
             with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
-                text = reader.readline().strip()
+                text = reader.readline().strip()            #  ----------------------------   类别a - 文本
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -124,6 +126,7 @@ class SiameseDataset(Dataset):
             image = preprocess_input(np.array(image).astype(np.float32))
             image = np.transpose(image, [2, 0, 1])
             pairs_of_images[0][pair, :, :, :] = image
+            pairs_of_texts[0][pair,  :len(text) ] = text
 
             #-------------------------------------------#
             #   将图片填充到输入2中
@@ -131,7 +134,7 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
             with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()
-            # TODO: 今天先开发到这里了！ 明天继续！！！！！！------2024-9-12
+            
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -143,20 +146,24 @@ class SiameseDataset(Dataset):
             image = preprocess_input(np.array(image).astype(np.float32))
             image = np.transpose(image, [2, 0, 1])
             pairs_of_images[1][pair, :, :, :] = image
-                
+            pairs_of_texts[1][pair,  :len(text) ] = text    
             if (pair + 1) % 2 == 0:   # （0+1）%2 == 1  /   (1+1) % 2 == 0
-                labels[pair] = 0     # 不同类别 他们的标签为0 
+                labels[pair] = 0     # 不同类别 他们的标签为 1
             else:
-                labels[pair] = 1     # 相同类别 他们的标签为1
+                labels[pair] = 1     # 相同类别 他们的标签为 0
 
         #-------------------------------------------#
         #   随机的排列组合
         #-------------------------------------------#
-        random_permutation = np.random.permutation(number_of_pairs)
-        labels = labels[random_permutation]
-        pairs_of_images[0][:, :, :, :] = pairs_of_images[0][random_permutation, :, :, :]
-        pairs_of_images[1][:, :, :, :] = pairs_of_images[1][random_permutation, :, :, :]
-        return pairs_of_images, labels
+        # random_permutation = np.random.permutation(number_of_pairs)  #  由于 number_of_pairs=2， 则 random_permutation=[1,0] or [0,1]
+        # # labels = labels[random_permutation]
+        
+        # ##  pairs_of_images[0] 中的2 张图像都是相似的!!!
+        # pairs_of_images[0][:, :, :, :] = pairs_of_images[0][random_permutation, :, :, :]  #  类别a -图像 ------- 类别a -图像  =============>  2 图像可能互换
+        
+        # ##  pairs_of_images[1] 中的2张图形都是 不相似的!!! 
+        # pairs_of_images[1][:, :, :, :] = pairs_of_images[1][random_permutation, :, :, :]  #  类别a -图像 ------- 类别b -图像  =============>  2 图像可能互换
+        return pairs_of_images, pairs_of_texts, labels
 
     def rand(self, a=0, b=1):
         return np.random.rand()*(b-a) + a
@@ -268,15 +275,19 @@ class SiameseDataset(Dataset):
 
 # DataLoader中collate_fn使用
 def dataset_collate(batch):
-    left_images     = []
-    right_images    = []
+    left_images, left_texts     = [], []
+    right_images, right_texts    = [], []
     labels          = []                  # 由于 batch_size设置为4， 所以 len(batch)=4,   
-    for pair_imgs, pair_labels in batch:         
+    for pair_imgs, pair_texts, pair_labels in batch:         
         
-                                                 #                     left_images          right_images
-        for i in range(len(pair_imgs[0])):       # pair_imgs = [.shape=(2,3,512,1536), .shape=(2,3,512,1536)],    pair_labels = [ [1.], [0.] ]
+                                                 #                 left_images(相似)      right_images(不相似)
+        for i in range(len(pair_imgs[0])):       # pair_imgs = [.shape=(2,3,512,1536), .shape=(2,3,512,1536)],    pair_labels = [ [1.], [0.] ]  ========= > 可见 当batch=1的时候，就有4张图像
             left_images.append(pair_imgs[0][i])  # 
+            left_texts.append(pair_texts[0][i])
+            
             right_images.append(pair_imgs[1][i])
+            right_texts.append(pair_texts[1][i])
+            
             labels.append(pair_labels[i])
     #  len(left_images) = len(right_images) = 8     left_images 都是相似的图像对，   right_images 都是不相似的图像对
     images = torch.from_numpy(np.array([left_images, right_images])).type(torch.FloatTensor) 
