@@ -1,5 +1,12 @@
 import math
-import os
+import os,sys
+#############################################################
+# print('='*8)
+# __dir__ = pathlib.Path(os.path.abspath(__file__))
+# print(f'here-path:{__dir__}')
+# sys.path.append(str(__dir__.parent.parent))
+# sys.path.append(str(__dir__.parent.parent))
+#############################################################
 import random
 from functools import partial
 from random import shuffle
@@ -7,10 +14,10 @@ from random import shuffle
 import numpy as np
 from PIL import Image
 
-from .utils_aug import center_crop, resize
+from utils_aug import center_crop, resize
 
 
-def load_dataset(dataset_path, train_own_data, train_ratio):
+def load_dataset(dataset_path, train_ratio=0.9):
     types       = 0
     train_path  =  dataset_path            # os.path.join(dataset_path, 'images_background')
     # train_path  = os.path.join(dataset_path, 'images_background')
@@ -28,7 +35,7 @@ def load_dataset(dataset_path, train_own_data, train_ratio):
         character_path = os.path.join(train_path, character)
         for image in os.listdir(character_path):
             raw_name, raw_extend_name = os.path.splitext(image)
-            if image.endswith(['.jpg','.png']):
+            if image.endswith(('.jpg','.png')):
                 image_path_lines.append(os.path.join(character_path, image))   # image_path_lines 存放着 图像的完整路径
                 assert os.path.exists(os.path.join(character_path, raw_name+'.txt'))
             elif image.endswith('.txt'):

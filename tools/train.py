@@ -1,4 +1,10 @@
-import os,torch,json
+import os, torch, json, sys, pathlib
+
+__dir__ = pathlib.Path(os.path.abspath(__file__))
+sys.path.append(str(__dir__.parent))
+sys.path.append(str(__dir__.parent.parent))
+# print(f'sys-path:{sys.path}')
+
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -8,11 +14,32 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from data import load_dataset
-from .utils import get_lr
+from utils import get_lr
 from tqdm import tqdm
 from models.cli2p import CLI2P
+from data import load_dataset
+from dataloader import SiameseDataset
 
-cli2p_model = CLI2P()
+
+dataset_path = r'dataset'
+train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels = load_dataset(dataset_path)
+# print(f"train_img_lines:{train_img_lines}")
+input_shape = [512, 1536]
+
+# (self, input_shape, img_lines, text_lines, labels, random=False, autoaugment_flag=True):
+train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
+dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+for imgs, texts, labels in dataloader:
+    print(imgs.shape)
+
+
+
+# cli2p_model = CLI2P({}) # TODO: 可以跑通该代码
+
+
+
+
+
 
 
 def fit_one_epoch(model,              # 模型\

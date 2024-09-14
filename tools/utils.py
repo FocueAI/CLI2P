@@ -7,7 +7,7 @@ from random import shuffle
 import numpy as np
 from PIL import Image
 
-from .utils_aug import center_crop, resize
+from utils_aug import center_crop, resize
 
 
 def load_dataset(dataset_path, train_own_data, train_ratio):

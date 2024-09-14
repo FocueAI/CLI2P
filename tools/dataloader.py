@@ -6,15 +6,15 @@ import torch
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
-from .utils import cvtColor, preprocess_input
-from .utils_aug import CenterCrop, ImageNetPolicy, RandomResizedCrop, Resize
+from utils import cvtColor, preprocess_input
+from utils_aug import CenterCrop, ImageNetPolicy, RandomResizedCrop, Resize
 
 
 def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
 
 class SiameseDataset(Dataset):
-    def __init__(self, input_shape, img_lines, text_lines, labels, random, autoaugment_flag=True):
+    def __init__(self, input_shape, img_lines, text_lines, labels, random=False, autoaugment_flag=True):
         self.input_shape     = input_shape
         self.train_img_lines = img_lines     # 所有图像 完整路径             |  [img1_path, img2_path, ... , imgn_path]
         self.train_text_lines= text_lines    # 所有文本 完整路径             |  [txt1_path, txt2_path, ... , txtn_path]
@@ -66,6 +66,7 @@ class SiameseDataset(Dataset):
         #   取出两张不类似的图片
         #------------------------------------------#
         batch_images_path.append(selected_img_path[selected_indexes[2]])  # 第 3 张  from 第 c 类
+        batch_textes_path.append(selected_text_path[selected_indexes[2]]) 
         #------------------------------------------#
         #   取出与当前的小类别不同的类
         #------------------------------------------#
