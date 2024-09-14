@@ -155,14 +155,18 @@ class SiameseDataset(Dataset):
         #-------------------------------------------#
         #   随机的排列组合
         #-------------------------------------------#
-        # random_permutation = np.random.permutation(number_of_pairs)  #  由于 number_of_pairs=2， 则 random_permutation=[1,0] or [0,1]
-        # # labels = labels[random_permutation]
+        random_permutation = np.random.permutation(number_of_pairs)  #  由于 number_of_pairs=2， 则 random_permutation=[1,0] or [0,1]
+        labels = labels[random_permutation]
         
-        # ##  pairs_of_images[0] 中的2 张图像都是相似的!!!
-        # pairs_of_images[0][:, :, :, :] = pairs_of_images[0][random_permutation, :, :, :]  #  类别a -图像 ------- 类别a -图像  =============>  2 图像可能互换
+        ##  pairs_of_images[0] 中的2 张图像都是相似的!!!
+        pairs_of_images[0][:, :, :, :] = pairs_of_images[0][random_permutation, :, :, :]  #  类别a -图像 ------- 类别a -图像  =============>  2 图像可能互换
+        pairs_of_texts[0][:, :, :, :]  = pairs_of_texts[0][random_permutation, :, :, :] 
         
-        # ##  pairs_of_images[1] 中的2张图形都是 不相似的!!! 
-        # pairs_of_images[1][:, :, :, :] = pairs_of_images[1][random_permutation, :, :, :]  #  类别a -图像 ------- 类别b -图像  =============>  2 图像可能互换
+        
+        ##  pairs_of_images[1] 中的2张图形都是 不相似的!!! 
+        pairs_of_images[1][:, :, :, :] = pairs_of_images[1][random_permutation, :, :, :]  #  类别a -图像 ------- 类别b -图像  =============>  2 图像可能互换
+        pairs_of_texts[1][:, :, :, :]  =  pairs_of_texts[1][random_permutation, :, :, :] 
+        
         return pairs_of_images, pairs_of_texts, labels
 
     def rand(self, a=0, b=1):
@@ -291,5 +295,8 @@ def dataset_collate(batch):
             labels.append(pair_labels[i])
     #  len(left_images) = len(right_images) = 8     left_images 都是相似的图像对，   right_images 都是不相似的图像对
     images = torch.from_numpy(np.array([left_images, right_images])).type(torch.FloatTensor) 
+    # TODO: 这里的texts 其实也要处理成tensor的形式，但是这里还未引入到 token技术， 暂时先使用 numpy的格式
+    texts = np.array([left_texts, right_texts]) 
+    
     labels = torch.from_numpy(np.array(labels)).type(torch.FloatTensor)
-    return images, labels
+    return images, texts, labels
