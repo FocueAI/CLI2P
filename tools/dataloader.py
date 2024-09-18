@@ -8,7 +8,7 @@ from torch.utils.data.dataset import Dataset
 
 from utils import cvtColor, preprocess_input
 from utils_aug import CenterCrop, ImageNetPolicy, RandomResizedCrop, Resize
-
+from models import tokenize
 
 def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
@@ -89,7 +89,7 @@ class SiameseDataset(Dataset):
         images, texts, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
         return images, texts, labels
 
-    def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list,  text_pad_str='卍', max_text_len=51):
+    def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list,  max_text_len=52):
         #-------------------------------------------#
         #   img_path_list  中有固定的4张图像     [类别a，类别a，类别a，类别b]
         #   text_path_list 中也有固定的4个文本   [类别a，类别a，类别a，类别b]
@@ -102,7 +102,7 @@ class SiameseDataset(Dataset):
         #   定义网络的输入图片和标签
         #-------------------------------------------#                                                                                类别a                 类别a                   类别a                    类别b
         pairs_of_images = [np.zeros((number_of_pairs, 3, self.input_shape[0], self.input_shape[1])) for i in range(2)]  # [ [.shape=[通道数=3,h,w],  .shape=[通道数=3,h,w],      [.shape=[通道数=3,h,w], .shape=[通道数=3,h,w]   ]  ====> 里面都为全 0 数据
-        pairs_of_texts  = [np.full((number_of_pairs, max_text_len),text_pad_str, dtype=object)  for _ in range(2)   ]           # [ [.shape=(max_text_len,), .shape=(max_text_len,)],   [.shape=(max_text_len,), .shape=(max_text_len,)]  ====>                                                   ]
+        pairs_of_texts  = [np.zeros((number_of_pairs, max_text_len), dtype=np.int32)  for _ in range(2)   ]           # [ [.shape=(max_text_len,), .shape=(max_text_len,)],   [.shape=(max_text_len,), .shape=(max_text_len,)]  ====>                                                   ]
         labels          = np.zeros((number_of_pairs, 1))                                                                # .shape=[组数=2，1]
 
         #-------------------------------------------#
@@ -116,6 +116,7 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]   类别a - 图像
             with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()            #  ----------------------------   类别a - 文本
+            text=tokenize(text)[0]    
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -126,8 +127,8 @@ class SiameseDataset(Dataset):
                 image = self.get_random_data(image, self.input_shape, random=self.random)
             image = preprocess_input(np.array(image).astype(np.float32))
             image = np.transpose(image, [2, 0, 1])
-            pairs_of_images[0][pair, :, :, :] = image
-            pairs_of_texts[0][pair,  :len(text) ] = text
+            pairs_of_images[0][pair, :, :, :] = image     # pairs_of_images[0].shape = (2, 3, 512, 1536)
+            pairs_of_texts[0][pair,  :len(text) ] = text  # pairs_of_texts[0].shape = (2,51)
 
             #-------------------------------------------#
             #   将图片填充到输入2中
@@ -135,7 +136,7 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
             with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()
-            
+            text=tokenize(text)[0] 
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -297,7 +298,7 @@ def dataset_collate(batch):
     #  len(left_images) = len(right_images) = 8     left_images 都是相似的图像对，   right_images 都是不相似的图像对
     images = torch.from_numpy(np.array([left_images, right_images])).type(torch.FloatTensor) 
     # TODO: 这里的texts 其实也要处理成tensor的形式，但是这里还未引入到 token技术， 暂时先使用 numpy的格式
-    texts = np.array([left_texts, right_texts]) 
+    texts = torch.from_numpy(np.array([left_texts, right_texts])).type(torch.LongTensor)
     
     labels = torch.from_numpy(np.array(labels)).type(torch.FloatTensor)
     return images, texts, labels

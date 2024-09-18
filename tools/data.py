@@ -38,10 +38,11 @@ def load_dataset(dataset_path, train_ratio=0.9):
             if image.endswith(('.jpg','.png')):
                 image_path_lines.append(os.path.join(character_path, image))   # image_path_lines 存放着 图像的完整路径
                 assert os.path.exists(os.path.join(character_path, raw_name+'.txt'))
+                labels.append(types)   # labels 存放着 图像对应的标签类型 0,1,2,3,4....
             elif image.endswith('.txt'):
                 text_path_lines.append(os.path.join(character_path, image))    # text_path_lines 存放着 图像的完整路径
                 assert os.path.exists(os.path.join(character_path, raw_name+'.jpg')) or os.path.exists(os.path.join(character_path, raw_name+'.png'))
-            labels.append(types)                                # labels 存放着 图像对应的标签类型 0,1,2,3,4....
+            # labels.append(types)                                # labels 存放着 图像对应的标签类型 0,1,2,3,4....
         types += 1  # 可见每一个最底层的文件夹，是一个类别
     assert len(image_path_lines) == len(text_path_lines)
     
