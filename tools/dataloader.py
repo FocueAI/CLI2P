@@ -296,9 +296,9 @@ def dataset_collate(batch):
             
             labels.append(pair_labels[i])
     #  len(left_images) = len(right_images) = 8     left_images 都是相似的图像对，   right_images 都是不相似的图像对
-    images = torch.from_numpy(np.array([left_images, right_images])).type(torch.FloatTensor) 
+    images = torch.from_numpy(np.array([left_images, right_images])).type(torch.HalfTensor)  # FloatTensor
     # TODO: 这里的texts 其实也要处理成tensor的形式，但是这里还未引入到 token技术， 暂时先使用 numpy的格式
     texts = torch.from_numpy(np.array([left_texts, right_texts])).type(torch.LongTensor)
     
-    labels = torch.from_numpy(np.array(labels)).type(torch.FloatTensor)
+    labels = torch.from_numpy(np.array(labels)).type(torch.HalfTensor) # FloatTensor
     return images, texts, labels

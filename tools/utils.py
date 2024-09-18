@@ -9,6 +9,7 @@ from PIL import Image
 
 from utils_aug import center_crop, resize
 import torch
+from tqdm import tqdm
 
 
 def fit_one_epoch(model,              # 模型\
@@ -23,7 +24,7 @@ def fit_one_epoch(model,              # 模型\
                   per_epoch_val_steps,   # 每一个世代，对应的评估步数
                   save_weight_dir, # 模型要保存的文件夹
                   use_cuda,    # 是否使用GPU
-                  is_fp16,     # 是否使用 fp16 精度
+                  is_fp16=False,     # 是否使用 fp16 精度
                   local_rank=0 # 对应的显卡号，如果是DDP模式下，也就是对应的线程号
                   ):
     
@@ -41,28 +42,38 @@ def fit_one_epoch(model,              # 模型\
     for iteration, batch in enumerate(train_data_loader):
         if iteration >= per_epoch_train_steps:
             break
-        images_bank, texts_bank = batch[0], batch[1]
-        images_cost, texts_cost = batch[2], batch[3]
+        # images_bank, texts_bank = batch[0], batch[1]
+        # images_cost, texts_cost = batch[2], batch[3]
+        imgs, texts, labels = batch
+        img_1, img_2 = imgs 
+        text_1, text_2 = texts
+        
+        
         if use_cuda:
-            images = images.cuda(local_rank)
-            texts = texts.cuda(local_rank)
+            img_1 = img_1.cuda(local_rank)
+            img_2 = img_2.cuda(local_rank)
+            
+            text_1 = text_1.cuda(local_rank)
+            text_2 = text_2.cuda(local_rank)
+            
+            labels = labels.cuda(local_rank)
         #----------------------#
         #   清零梯度
         #----------------------#    
         optimizer.zero_grad()
         if not is_fp16:
-            mix_feat_bank = model(images_bank, texts_bank)
-            mix_feat_cost = model(images_cost, texts_cost)
-            output = loss_fn(mix_feat_bank, mix_feat_cost)
+            mix_feat_bank = model(img_1, text_1)
+            mix_feat_cost = model(img_2, text_2)
+            output = loss_fn((mix_feat_bank, mix_feat_cost), labels)
             
             output.backward()
-            output.step()
+            optimizer.step()
             
         else:
             from torch.cuda.amp import autocast
             with autocast():
-                mix_feat_bank = model(images_bank, texts_bank)
-                mix_feat_cost = model(images_cost, texts_cost)
+                mix_feat_bank = model(img_1, text_1)
+                mix_feat_cost = model(img_2, text_2)
         
         train_loss += output.item() 
         
@@ -87,17 +98,31 @@ def fit_one_epoch(model,              # 模型\
         if iteration >= per_epoch_val_steps:
             break
         
-        images_bank, texts_bank = batch[0], batch[1]
-        images_cost, texts_cost = batch[2], batch[3]
+        # images_bank, texts_bank = batch[0], batch[1]
+        # images_cost, texts_cost = batch[2], batch[3]
+        
+        imgs, texts, labels = batch
+        img_1, img_2 = imgs 
+        text_1, text_2 = texts
+        
+        
+        
+        
+        
         with torch.no_grad():
             if use_cuda:
-                images = images.cuda(local_rank)
-                texts = texts.cuda(local_rank)   
+                img_1 = img_1.cuda(local_rank)
+                img_2 = img_2.cuda(local_rank)
+                
+                text_1 = text_1.cuda(local_rank)
+                text_2 = text_2.cuda(local_rank)
+                
+                labels = labels.cuda(local_rank)
     
             optimizer.zero_grad()
-            mix_feat_bank = model(images_bank, texts_bank)
-            mix_feat_cost = model(images_cost, texts_cost)
-            output = loss_fn(mix_feat_bank, mix_feat_cost)
+            mix_feat_bank = model(img_1, text_1)
+            mix_feat_cost = model(img_2, text_2)
+            output = loss_fn((mix_feat_bank, mix_feat_cost), labels)
         
         # this step finish
         val_loss += output.item()
