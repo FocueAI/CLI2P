@@ -26,6 +26,7 @@ def fit_one_epoch(model,              # 模型\
                   use_cuda,    # 是否使用GPU
                   is_fp16=False,     # 是否使用 fp16 精度
                   local_rank=0 # 对应的显卡号，如果是DDP模式下，也就是对应的线程号
+                  clip_grad=False # 是否做梯度限制
                   ):
     
     # 定义评价指标等
@@ -67,6 +68,9 @@ def fit_one_epoch(model,              # 模型\
             output = loss_fn((mix_feat_bank, mix_feat_cost), labels)
             
             output.backward()
+            
+            if clip_grad: 
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # 可以做写梯度限制
             optimizer.step()
             
         else:
