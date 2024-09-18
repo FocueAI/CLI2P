@@ -82,7 +82,7 @@ def available_models() -> List[str]:
 
 
 def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu",
-                   download_root: str = None, vision_model_name: str = None, text_model_name: str = None, input_resolution: int = None):
+                   download_root: str = None, vision_model_name: str = None, text_model_name: str = None, input_resolution: int = None, freeze_flag: bool = True):
     if name in _MODELS:
         model_path = _download(_MODELS[name], download_root or os.path.expanduser("~/.cache/clip"))
         model_name, model_input_resolution = _MODEL_INFO[name]['struct'], _MODEL_INFO[name]['input_resolution']
@@ -102,6 +102,10 @@ def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch
         model.float()
     else:
         model.to(device)
+    if freeze_flag:
+        # 冻结第一层的参数
+        for param in model.parameters():
+            param.requires_grad = False
     return model, image_transform(model_input_resolution)
 
 
