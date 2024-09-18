@@ -25,7 +25,7 @@ def fit_one_epoch(model,              # 模型\
                   save_weight_dir, # 模型要保存的文件夹
                   use_cuda,    # 是否使用GPU
                   is_fp16=False,     # 是否使用 fp16 精度
-                  local_rank=0 # 对应的显卡号，如果是DDP模式下，也就是对应的线程号
+                  local_rank=0, # 对应的显卡号，如果是DDP模式下，也就是对应的线程号
                   clip_grad=False # 是否做梯度限制
                   ):
     
