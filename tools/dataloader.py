@@ -86,8 +86,8 @@ class SiameseDataset(Dataset):
         batch_images_path.append(selected_img_path[selected_indexes[0]]) # 第 4 张  from 第 非c 类
         batch_textes_path.append(selected_text_path[selected_indexes[0]])
         
-        images, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
-        return images, labels
+        images, texts, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
+        return images, texts, labels
 
     def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list,  text_pad_str='卍', max_text_len=51):
         #-------------------------------------------#
@@ -161,12 +161,12 @@ class SiameseDataset(Dataset):
         
         ##  pairs_of_images[0] 中的2 张图像都是相似的!!!
         pairs_of_images[0][:, :, :, :] = pairs_of_images[0][random_permutation, :, :, :]  #  类别a -图像 ------- 类别a -图像  =============>  2 图像可能互换
-        pairs_of_texts[0][:, :, :, :]  = pairs_of_texts[0][random_permutation, :, :, :] 
+        pairs_of_texts[0][:, :]  = pairs_of_texts[0][random_permutation, :] 
         
         
         ##  pairs_of_images[1] 中的2张图形都是 不相似的!!! 
         pairs_of_images[1][:, :, :, :] = pairs_of_images[1][random_permutation, :, :, :]  #  类别a -图像 ------- 类别b -图像  =============>  2 图像可能互换
-        pairs_of_texts[1][:, :, :, :]  =  pairs_of_texts[1][random_permutation, :, :, :] 
+        pairs_of_texts[1][:, :]  =  pairs_of_texts[1][random_permutation, :] 
         
         return pairs_of_images, pairs_of_texts, labels
 
