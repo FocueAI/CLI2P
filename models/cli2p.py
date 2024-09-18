@@ -29,14 +29,20 @@ class CLI2P(nn.Module):
             nn.Linear(512, 1024),  # 将潜在空间重构回1024维
             nn.Sigmoid() 
             
-        ).to(torch.float16)
+        ) # .to(torch.float16)
         self.__dict__.update(self._defaults) # 新更新默认参数
         self.__dict__.update(kwarg)     # 在更新传入参数
         # 图文提取器            图像前处理器
         self.feat_extrator, self.img_preprocessor = load_from_name(self.model_name, device=self.device, download_root=self.download_root)
         self.text_preprocessor = tokenize
-        
-        
+        self._initialize_weights()  # 这个是含必要的
+    def _initialize_weights(self):
+        import torch.nn.init as init
+        for m in self.feature_mix.modules():
+            if isinstance(m, nn.Linear):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)  # 也可以使用   
         
     
     def forward(self, image, text):
@@ -60,6 +66,6 @@ class CLI2P(nn.Module):
         
         image_text_features = torch.cat((image_features, image_features),dim=1)   # .shape=(1,1024)
         
-        image_text_features = self.feature_mix(image_text_features) # .shape=(1,1024)
-        
+        # image_text_features = self.feature_mix(image_text_features) # .shape=(1,1024)
+        image_text_features = self.feature_mix(image_text_features.to(torch.float32)) # .shape=(1,1024)   # 会将数据变为nan
         return image_text_features
