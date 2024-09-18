@@ -34,26 +34,26 @@ cli2p_model = cli2p_model.cuda()
 
 # def 
 
+Epoch = 100
+for epoch in range(Epoch):
+    for imgs, texts, labels in dataloader:
+        print('-'*10)
+        print('imgs.shape:',imgs.shape)     # torch.Size([2, 4, 3, 512, 1536])
+        print('texts.shape:',texts.shape)   # texts.shape: (2, 4, 51)
+        print('label.shape:',labels.shape)  # torch.Size([4, 1])
+        
+        
+        img_1, img_2 = imgs     # img_1.shape=img_2.shape=(4, 3, 512, 1536)
+        text_1, text_2 = texts  # text_1.shape=text_2.shape=(4,51)
+        # text_1 = cli2p_model.text_preprocessor(text_1)
+        # text_2 = cli2p_model.text_preprocessor(text_2)
+        print(f"text_1:{text_1}")
+        print(f"text_2:{text_2}")
+        
+        img_text_feature1 = cli2p_model(img_1.cuda(), text_1.cuda())
+        img_text_feature2 = cli2p_model(img_2.cuda(), text_2.cuda())
 
 
-for imgs, texts, labels in dataloader:
-    print('-'*10)
-    print('imgs.shape:',imgs.shape)     # torch.Size([2, 4, 3, 512, 1536])
-    print('texts.shape:',texts.shape)   # texts.shape: (2, 4, 51)
-    print('label.shape:',labels.shape)  # torch.Size([4, 1])
-    
-    
-    img_1, img_2 = imgs     # img_1.shape=img_2.shape=(4, 3, 512, 1536)
-    text_1, text_2 = texts  # text_1.shape=text_2.shape=(4,51)
-    # text_1 = cli2p_model.text_preprocessor(text_1)
-    # text_2 = cli2p_model.text_preprocessor(text_2)
-    print(f"text_1:{text_1}")
-    print(f"text_2:{text_2}")
-    
-    img_text_feature1 = cli2p_model(img_1.cuda(), text_1.cuda())
-    img_text_feature2 = cli2p_model(img_2.cuda(), text_2.cuda())
-
-
-    print(f'img_text_feature1:{img_text_feature1}')
-    print(f'img_text_feature2:{img_text_feature2}')
+        print(f'img_text_feature1:{img_text_feature1}')
+        print(f'img_text_feature2:{img_text_feature2}')
 
