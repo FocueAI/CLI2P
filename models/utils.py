@@ -164,7 +164,7 @@ def image_transform(image_size=224):
     return transform
 
 
-def create_model(model_name, checkpoint=None):
+def create_model(model_name, checkpoint=None, freeze_flag=True):
     vision_model, text_model = model_name.split('@')   # vision_model = 'ViT-B-16',  text_model = 'RoBERTa-wwm-ext-base-chinese'
     # ------------------------------------------- 图像编码器的相关配置 ---------------------------------------- # 
     vision_model_config_file = Path(
@@ -191,4 +191,7 @@ def create_model(model_name, checkpoint=None):
         if next(iter(sd.items()))[0].startswith('module'):
             sd = {k[len('module.'):]: v for k, v in sd.items() if "bert.pooler" not in k}
         model.load_state_dict(sd)
+    if freeze_flag:
+        for param in model.parameters():
+            param.requires_grad = False
     return model

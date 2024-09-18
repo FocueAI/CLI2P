@@ -49,12 +49,13 @@ loss_fn = contrastive.ContrastiveLoss()
 Init_lr_fit = 3e-5
 momentum      = 0.9
 weight_decay  = 0
-optimizer_type = 'adam'
-optimizer = {
-    'adam'  : optim.Adam(cli2p_model.parameters(), Init_lr_fit, betas = (momentum, 0.999), weight_decay = weight_decay),
-    'sgd'   : optim.SGD(cli2p_model.parameters(), Init_lr_fit, momentum=momentum, nesterov=True, weight_decay = weight_decay)
-}[optimizer_type]
+optimizer_type = 'sgd'
+# optimizer = {
+#     'adam'  : optim.Adam(cli2p_model.parameters(), Init_lr_fit, betas = (momentum, 0.999), weight_decay = weight_decay),
+#     'sgd'   : optim.SGD(cli2p_model.parameters(), Init_lr_fit, momentum=momentum, nesterov=True, weight_decay = weight_decay)
+# }[optimizer_type]
 
+optimizer = optim.Adam(cli2p_model.parameters(), lr=0.000001, eps=1e-8)
 
 # step5: 
 save_dir = r'./model_weight_9_18'
