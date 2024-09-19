@@ -50,14 +50,17 @@ else:
 
 # step1: 数据加载模块
 
-train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels = load_dataset(config_global["dataset_path"])
+train_img_lines, train_text_lines, train_labels= load_dataset(config_global["train_dataset_path"])
+val_img_lines, val_text_lines, val_labels = load_dataset(config_global["val_dataset_path"])
+
+
 # print(f"train_img_lines:{train_img_lines}")
 
 ## 训练数据
-train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
+train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=config_global["context_length"])
 train_dataloader = DataLoader(train_dataset, batch_size=config_global['batch_size'], shuffle=True, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 ## 训练数据
-val_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
+val_dataset  = SiameseDataset(config_global['input_shape'], val_img_lines, val_text_lines, val_labels, True, autoaugment_flag=False,context_length=config_global["context_length"])
 val_dataloader = DataLoader(val_dataset, batch_size=config_global['batch_size'], shuffle=False, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 
 

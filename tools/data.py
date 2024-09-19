@@ -63,22 +63,23 @@ def load_dataset(dataset_path, train_ratio=0.9):
     text_path_lines    = text_path_lines[shuffle_index]   # 打乱之后的 图像路径 数组  
     labels             = labels[shuffle_index]  # 打乱之后的 图像类别 数组 （与图像路径是一一对应关系。。。。。）
     
+    return image_path_lines, text_path_lines, labels
     #-------------------------------------------------------------#
     #   将训练集和验证集进行划分
     #-------------------------------------------------------------#
-    num_train           = int(len(image_path_lines)*train_ratio)
+    # num_train           = int(len(image_path_lines)*train_ratio)
     
-    # -------划分出来的验证集部分
-    val_img_lines       = image_path_lines[num_train:]
-    val_text_lines      = text_path_lines[num_train:]
-    val_labels          = labels[num_train:]
+    # # -------划分出来的验证集部分
+    # val_img_lines       = image_path_lines[num_train:]
+    # val_text_lines      = text_path_lines[num_train:]
+    # val_labels          = labels[num_train:]
     
-    # -------划分出来的训练集部分
-    train_img_lines   = image_path_lines[:num_train]
-    train_text_lines  = text_path_lines[:num_train]
-    train_labels      = labels[:num_train]
+    # # -------划分出来的训练集部分
+    # train_img_lines   = image_path_lines[:num_train]
+    # train_text_lines  = text_path_lines[:num_train]
+    # train_labels      = labels[:num_train]
     
-    return train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels
+    # return train_img_lines, train_text_lines, train_labels # , val_img_lines, val_text_lines, val_labels
     # return train_lines, train_labels, val_lines, val_labels
 
 #---------------------------------------------------#
