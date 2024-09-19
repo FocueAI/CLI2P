@@ -150,6 +150,8 @@ def fit_one_epoch(model,              # 模型\
             torch.save(model.state_dict(), os.path.join(save_weight_dir, "best_epoch_weights.pth"))
             
         torch.save(model.state_dict(), os.path.join(save_weight_dir, "last_epoch_weights.pth"))
+        
+        return val_loss / per_epoch_val_steps
 
 
 

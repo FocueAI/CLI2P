@@ -11,7 +11,7 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from data import load_dataset
 from utils import get_lr
@@ -60,20 +60,18 @@ optimizer = {
 
 # step5: 
 save_dir = r'./model_weight_9_18'
-
-
-
 loss_history = LossHistory(save_dir, cli2p_model, input_shape=input_shape)
 
 
 
-# step4：学习率调整单元
-pass
+# step6：学习率调整单元
+schedular = StepLR(optimizer=optimizer,step_size=6,gamma=0.9) # 每 2 轮 学习率 变成原来的 0.9倍
+schedular = ReduceLROnPlateau(optimizer=optimizer, mode='min',factor=0.9, patience=3, eps=1e-10) # 当学习率小于eps之后，学习率将不在调整!!!
 
-# step5: 开始训练
+# step7: 开始训练
 Epoch = 100
 for epoch in range(Epoch):
-    fit_one_epoch(
+    val_loss = fit_one_epoch(
         model=cli2p_model, 
         train_data_loader = train_dataloader,
         val_data_loader = val_dataloader,
@@ -87,6 +85,6 @@ for epoch in range(Epoch):
         save_weight_dir = save_dir,
         use_cuda = True,
     )
-
+    schedular.step(val_loss)
 
 
