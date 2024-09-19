@@ -29,6 +29,8 @@ from tools.callbacks import LossHistory
 use_cuda = True
 # 模型保存的位置
 save_dir = r'./model_weight_9_18'
+# 数据地址
+dataset_path = r'dataset'
 # 图像编码器的输入尺寸
 input_shape = [224, 224]
 # batch大小
@@ -37,33 +39,66 @@ batch_size = 2
 optimizer_type = 'adam'
 # 学习率调整策略
 lr_schedular_type = 'ReduceLROnPlateau'
-# 是否使用多线程读取数据，1 代表关闭多线程
-num_workers = 4
+# 是否使用多线程读取数据，0代表关闭多线程
+num_workers = 0
 # 是否使用DDP模式训练数据
-
-
-
-
+distributed = False
+# 是否使用预训练权重
+pretrained   = True
 
 ################################## ------------------------------------- 总体参数设置区域 end ----------------------------------------- ########################################
 
+
+ngpus_per_node  = torch.cuda.device_count()
+if distributed:
+    dist.init_process_group(backend="nccl")
+    local_rank  = int(os.environ["LOCAL_RANK"])
+    rank        = int(os.environ["RANK"])
+    device      = torch.device("cuda", local_rank)
+    if local_rank == 0:
+        print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
+        print("Gpu Device Count : ", ngpus_per_node)
+else:
+    device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    local_rank      = 0
+    rank            = 0    
+
+
+
+
 # step1: 数据加载模块
-dataset_path = r'dataset'
+
 train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels = load_dataset(dataset_path)
 # print(f"train_img_lines:{train_img_lines}")
 
 ## 训练数据
 train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate, num_workers=num_workers)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
 ## 训练数据
 val_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate, num_workers=num_workers)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
 
 
 # step2：模型加载模块
-cli2p_model = CLI2P({}) # TODO: 可以跑通该代码
+cli2p_model = CLI2P({}) 
 if use_cuda:
     cli2p_model = cli2p_model.cuda()
+
+
+model_path = os.path.join(save_dir, "best_epoch_weights.pth")
+if pretrained and os.path.exists(model_path):
+        cli2p_model_dict      = cli2p_model.state_dict()
+        pretrained_dict = torch.load(model_path, map_location = device)
+        load_key, no_load_key, temp_dict = [], [], {}
+        for k, v in pretrained_dict.items():
+            if k in cli2p_model_dict.keys() and np.shape(cli2p_model_dict[k]) == np.shape(v):
+                temp_dict[k] = v
+                load_key.append(k)
+            else:
+                no_load_key.append(k)
+        cli2p_model_dict.update(temp_dict)
+        cli2p_model.load_state_dict(cli2p_model_dict)
+print(f'no_load_key:{no_load_key}')
 
 # step3: 损失函数加载模块
 loss_fn = contrastive.ContrastiveLoss()
