@@ -2,7 +2,7 @@ Global:
   # 是否使用cuda
   use_cuda: True
   # 模型保存的位置
-  save_dir: './model_weight_9_18'
+  save_dir: './model_weight_9_19'
   # 训练集数据地址
   train_dataset_path: 'datasets_book_spine/train'
   # 验证集数据地址
@@ -22,5 +22,5 @@ Global:
   # 是否使用DDP模式训练数据
   distributed: False
   # 是否使用预训练权重
-  pretrained: True
+  pretrained: False
   num_epoch: 300

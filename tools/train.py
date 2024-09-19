@@ -69,6 +69,8 @@ cli2p_model = CLI2P({})
 if config_global['use_cuda']:
     cli2p_model = cli2p_model.cuda()
 
+if not os.path.exists(config_global['save_dir']):
+    os.makedirs(config_global['save_dir'])
 
 model_path = os.path.join(config_global['save_dir'], "best_epoch_weights.pth")
 if config_global['pretrained'] and os.path.exists(model_path):
@@ -133,5 +135,3 @@ for epoch in range(Epoch):
         use_cuda = config_global['use_cuda'],
     )
     lr_schedular.step(val_loss)
-
-
