@@ -19,10 +19,12 @@ from tqdm import tqdm
 from models.cli2p import CLI2P
 from data import load_dataset
 from dataloader import SiameseDataset, dataset_collate
-from models import load_from_name, tokenize
+from models import load_from_name, tokenize, image_transform
 from tools import contrastive
 from tools.utils import fit_one_epoch
 from tools.callbacks import LossHistory
+
+
 
 # step1: 数据加载模块
 dataset_path = r'dataset'
