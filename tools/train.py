@@ -130,7 +130,7 @@ for epoch in range(Epoch):
         epoch_no=epoch,
         epoch_num =Epoch,
         per_epoch_train_steps= len(train_img_lines) // config_global['batch_size'],
-        per_epoch_val_steps = len(train_img_lines) // config_global['batch_size'],
+        per_epoch_val_steps = len(val_img_lines) // config_global['batch_size'],
         save_weight_dir = config_global['save_dir'],
         use_cuda = config_global['use_cuda'],
     )
