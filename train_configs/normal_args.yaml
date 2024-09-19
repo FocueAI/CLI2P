@@ -1,0 +1,24 @@
+Global:
+  # 是否使用cuda
+  use_cuda: True
+  # 模型保存的位置
+  save_dir: './model_weight_9_18'
+  # 数据地址
+  dataset_path: 'dataset'
+  # 图像编码器的输入尺寸
+  input_shape: [224, 224]
+  # 文本编码器的文本长度
+  context_length: 120
+  # batch大小
+  batch_size: 2
+  # 优化器的类型 ['adam' , 'sgd']
+  optimizer_type: 'adam'
+  # 学习率调整策略
+  lr_schedular_type: 'ReduceLROnPlateau'
+  # 是否使用多线程读取数据，0代表关闭多线程
+  num_workers: 0
+  # 是否使用DDP模式训练数据
+  distributed: False
+  # 是否使用预训练权重
+  pretrained: True
+  num_epoch: 300

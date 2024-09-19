@@ -6,7 +6,7 @@ sys.path.append(str(__dir__.parent.parent))
 # print(f'sys-path:{sys.path}')
 
 import numpy as np
-import torch
+import torch, yaml
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.nn as nn
@@ -25,34 +25,14 @@ from tools.utils import fit_one_epoch
 from tools.callbacks import LossHistory
 
 ################################## ------------------------------------- 总体参数设置区域 begin ----------------------------------------- ########################################
-# 是否使用cuda
-use_cuda = True
-# 模型保存的位置
-save_dir = r'./model_weight_9_18'
-# 数据地址
-dataset_path = r'dataset'
-# 图像编码器的输入尺寸
-input_shape = [224, 224]
-# 文本编码器的文本长度
-context_length= 120
-# batch大小
-batch_size = 2
-# 优化器的类型 ['adam' , 'sgd']
-optimizer_type = 'adam'
-# 学习率调整策略
-lr_schedular_type = 'ReduceLROnPlateau'
-# 是否使用多线程读取数据，0代表关闭多线程
-num_workers = 0
-# 是否使用DDP模式训练数据
-distributed = False
-# 是否使用预训练权重
-pretrained   = True
-
+with open('train_configs/normal_args.yaml', 'r', encoding='utf-8') as file:
+    config = yaml.safe_load(file)
+config_global = config['Global']
 ################################## ------------------------------------- 总体参数设置区域 end ----------------------------------------- ########################################
 
 
 ngpus_per_node  = torch.cuda.device_count()
-if distributed:
+if config_global['distributed']:
     dist.init_process_group(backend="nccl")
     local_rank  = int(os.environ["LOCAL_RANK"])
     rank        = int(os.environ["RANK"])
@@ -70,25 +50,25 @@ else:
 
 # step1: 数据加载模块
 
-train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels = load_dataset(dataset_path)
+train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, val_labels = load_dataset(config_global["dataset_path"])
 # print(f"train_img_lines:{train_img_lines}")
 
 ## 训练数据
-train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
+train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
+train_dataloader = DataLoader(train_dataset, batch_size=config_global['batch_size'], shuffle=True, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 ## 训练数据
-val_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
+val_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
+val_dataloader = DataLoader(val_dataset, batch_size=config_global['batch_size'], shuffle=False, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 
 
 # step2：模型加载模块
 cli2p_model = CLI2P({}) 
-if use_cuda:
+if config_global['use_cuda']:
     cli2p_model = cli2p_model.cuda()
 
 
-model_path = os.path.join(save_dir, "best_epoch_weights.pth")
-if pretrained and os.path.exists(model_path):
+model_path = os.path.join(config_global['save_dir'], "best_epoch_weights.pth")
+if config_global['pretrained'] and os.path.exists(model_path):
         cli2p_model_dict      = cli2p_model.state_dict()
         pretrained_dict = torch.load(model_path, map_location = device)
         load_key, no_load_key, temp_dict = [], [], {}
@@ -112,11 +92,11 @@ weight_decay  = 0
 optimizer = {
     'adam'  : optim.Adam(cli2p_model.parameters(), Init_lr_fit, betas = (momentum, 0.999), weight_decay = weight_decay),
     'sgd'   : optim.SGD(cli2p_model.parameters(), Init_lr_fit, momentum=momentum, nesterov=True, weight_decay = weight_decay)
-}[optimizer_type]
+}[config_global['optimizer_type']]
 
 
 # step5: 
-loss_history = LossHistory(save_dir, cli2p_model, input_shape=input_shape)
+loss_history = LossHistory(config_global['save_dir'], cli2p_model, input_shape=config_global['input_shape'])
 
 
 
@@ -127,13 +107,13 @@ lr_schedular = {
     'StepLR': StepLR(optimizer=optimizer,step_size=6,gamma=0.9), # 每 2 轮 学习率 变成原来的 0.9倍
     'ReduceLROnPlateau': ReduceLROnPlateau(optimizer=optimizer, mode='min',factor=0.9, patience=3, eps=1e-10) # 当学习率小于eps之后，学习率将不在调整!!!
     
-}[lr_schedular_type]
+}[config_global['lr_schedular_type']]
 
 
 
 
 # step7: 开始训练
-Epoch = 100
+Epoch = config_global["num_epoch"]
 for epoch in range(Epoch):
     val_loss = fit_one_epoch(
         model=cli2p_model, 
@@ -144,10 +124,10 @@ for epoch in range(Epoch):
         optimizer = optimizer,
         epoch_no=epoch,
         epoch_num =Epoch,
-        per_epoch_train_steps= len(train_img_lines) // batch_size,
-        per_epoch_val_steps = len(train_img_lines) // batch_size,
-        save_weight_dir = save_dir,
-        use_cuda = use_cuda,
+        per_epoch_train_steps= len(train_img_lines) // config_global['batch_size'],
+        per_epoch_val_steps = len(train_img_lines) // config_global['batch_size'],
+        save_weight_dir = config_global['save_dir'],
+        use_cuda = config_global['use_cuda'],
     )
     lr_schedular.step(val_loss)
 
