@@ -14,13 +14,13 @@ def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
 
 class SiameseDataset(Dataset):
-    def __init__(self, input_shape, img_lines, text_lines, labels, random=False, autoaugment_flag=True):
+    def __init__(self, input_shape, img_lines, text_lines, labels, random=False, autoaugment_flag=True, context_length=120):
         self.input_shape     = input_shape
         self.train_img_lines = img_lines     # 所有图像 完整路径             |  [img1_path, img2_path, ... , imgn_path]
         self.train_text_lines= text_lines    # 所有文本 完整路径             |  [txt1_path, txt2_path, ... , txtn_path]
         self.train_labels    = labels        # 所有图像 or 文本 对应的 类别  |   [   0,         1,     ... ,     n    ]
         self.types           = max(labels)   # 总共含有的类别数
-
+        self.context_length  = context_length
         self.random         = random
         
         self.autoaugment_flag   = autoaugment_flag
@@ -86,7 +86,7 @@ class SiameseDataset(Dataset):
         batch_images_path.append(selected_img_path[selected_indexes[0]]) # 第 4 张  from 第 非c 类
         batch_textes_path.append(selected_text_path[selected_indexes[0]])
         
-        images, texts, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path)
+        images, texts, labels = self._convert_path_list_to_images_and_labels(batch_images_path, batch_textes_path, max_text_len=self.context_length)
         return images, texts, labels
 
     def _convert_path_list_to_images_and_labels(self, img_path_list, text_path_list,  max_text_len=52):
@@ -116,7 +116,7 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]   类别a - 图像
             with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()            #  ----------------------------   类别a - 文本
-            text=tokenize(text)[0]    
+            text=tokenize(text,context_length=self.context_length)[0]    
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#
@@ -136,7 +136,7 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
             with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()
-            text=tokenize(text)[0] 
+            text=tokenize(text,context_length=self.context_length)[0] 
             #------------------------------#
             #   读取图像并转换成RGB图像
             #------------------------------#

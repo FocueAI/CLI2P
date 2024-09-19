@@ -33,6 +33,8 @@ save_dir = r'./model_weight_9_18'
 dataset_path = r'dataset'
 # 图像编码器的输入尺寸
 input_shape = [224, 224]
+# 文本编码器的文本长度
+context_length= 120
 # batch大小
 batch_size = 2
 # 优化器的类型 ['adam' , 'sgd']
@@ -72,10 +74,10 @@ train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, 
 # print(f"train_img_lines:{train_img_lines}")
 
 ## 训练数据
-train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
+train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
 ## 训练数据
-val_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
+val_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=120)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate, num_workers=num_workers, pin_memory=True)
 
 
@@ -98,7 +100,7 @@ if pretrained and os.path.exists(model_path):
                 no_load_key.append(k)
         cli2p_model_dict.update(temp_dict)
         cli2p_model.load_state_dict(cli2p_model_dict)
-print(f'no_load_key:{no_load_key}')
+        print(f'no_load_key:{no_load_key}')
 
 # step3: 损失函数加载模块
 loss_fn = contrastive.ContrastiveLoss()

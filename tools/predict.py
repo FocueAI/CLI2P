@@ -21,7 +21,7 @@ text_1_path = r'dataset\001T110027850\001T110027850.jpg-0enhance-0.txt'
 
 # 第 2 组 图文对
 img_2_path =  r'dataset\00000941\00000941.jpg-0enhance-0.jpg'
-text_2_path = text_1_path # r'dataset\00000941\00000941.jpg-0enhance-0.txt'
+text_2_path =  r'dataset\00000941\00000941.jpg-0enhance-0.txt'
 
 pil_img_1 = Image.open(img_1_path)
 with open(text_1_path, 'r', encoding='utf-8') as reader:
@@ -30,14 +30,15 @@ with open(text_1_path, 'r', encoding='utf-8') as reader:
 pil_img_2 = Image.open(img_2_path)
 with open(text_2_path, 'r', encoding='utf-8') as reader:
     text_2_con = reader.readline().strip()
-
+print(f'text_1_con:{text_1_con}')
+print(f'text_2_con:{text_2_con}')
 
 img_1 = cli2p_model.img_preprocessor(pil_img_1).unsqueeze(0).to(device)
 img_2 = cli2p_model.img_preprocessor(pil_img_2).unsqueeze(0).to(device)
 
 
-text1 = cli2p_model.text_preprocessor(text_1_con).to(device)
-text2 = cli2p_model.text_preprocessor(text_2_con).to(device)
+text1 = cli2p_model.text_preprocessor(text_1_con,context_length=120).to(device)
+text2 = cli2p_model.text_preprocessor(text_2_con,context_length=120).to(device)
 
 with torch.no_grad():
     mix_feat1 = cli2p_model(img_1, text1)
