@@ -103,7 +103,7 @@ def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch
     else:
         model.to(device)
     if freeze_flag:
-        # 冻结第一层的参数
+        # 冻结参数
         for param in model.parameters():
             param.requires_grad = False
     return model, image_transform(model_input_resolution)
