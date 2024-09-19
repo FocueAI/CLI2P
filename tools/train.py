@@ -37,6 +37,13 @@ batch_size = 2
 optimizer_type = 'adam'
 # 学习率调整策略
 lr_schedular_type = 'ReduceLROnPlateau'
+# 是否使用多线程读取数据，1 代表关闭多线程
+num_workers = 4
+# 是否使用DDP模式训练数据
+
+
+
+
 
 ################################## ------------------------------------- 总体参数设置区域 end ----------------------------------------- ########################################
 
@@ -47,10 +54,10 @@ train_img_lines, train_text_lines, train_labels, val_img_lines, val_text_lines, 
 
 ## 训练数据
 train_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate )
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset_collate, num_workers=num_workers)
 ## 训练数据
 val_dataset  = SiameseDataset(input_shape, train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate )
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset_collate, num_workers=num_workers)
 
 
 # step2：模型加载模块
