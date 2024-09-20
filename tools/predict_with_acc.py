@@ -50,7 +50,7 @@ class Computer_im_text_feature_D:
 if __name__ == "__main__":
     im_distance_computer = Computer_im_text_feature_D()
     # ----------------------------------------------------------------------- #    
-    img_dir = r"datasets_book_spine/val"  
+    img_dir = r"datasets_book_spine/train"  
     all_img_dir = [os.path.join(img_dir, i) for i in os.listdir(img_dir) ]
     random.shuffle(all_img_dir)
     # print(all_img_dir)
@@ -105,9 +105,8 @@ if __name__ == "__main__":
 ############### 测试结果 ###############
 """
 test-acc: 0.94575963
-val-acc:
-train-acc: 
-
+val-acc:  0.9409542871900828
+train-acc: 0.940823823225139
 """
 #########################################
 
