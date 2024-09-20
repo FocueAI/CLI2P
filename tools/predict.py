@@ -8,7 +8,7 @@ from PIL import Image
 
 from models.cli2p import CLI2P
 cli2p_model = CLI2P({}) 
-save_dir = r'./model_weight_9_18'
+save_dir = r'./model_weight_9_19'
 model_path = os.path.join(save_dir, "best_epoch_weights.pth")
 model_dict = torch.load(model_path)
 cli2p_model.load_state_dict(model_dict)
@@ -16,12 +16,12 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 cli2p_model = cli2p_model.to(device)
 
 # 第 1 组 图文对
-img_1_path = r'dataset\001T110027850\001T110027850.jpg-0enhance-0.jpg'
-text_1_path = r'dataset\001T110027850\001T110027850.jpg-0enhance-0.txt'
+img_1_path = r'datasets_book_spine/test/003T190029452/003T190029452.jpg-0enhance-0.jpg'
+text_1_path = r'datasets_book_spine/test/003T190029452/003T190029452.jpg-0enhance-0.txt'
 
 # 第 2 组 图文对
-img_2_path =  r'dataset\00000941\00000941.jpg-0enhance-0.jpg'
-text_2_path =  r'dataset\00000941\00000941.jpg-0enhance-0.txt'
+img_2_path = r'datasets_book_spine/test/30020357/30020357.jpg-0enhance-0.jpg'
+text_2_path = text_1_path #  r'datasets_book_spine/test/30020357/30020357.jpg-0enhance-0.txt'
 
 pil_img_1 = Image.open(img_1_path)
 with open(text_1_path, 'r', encoding='utf-8') as reader:
