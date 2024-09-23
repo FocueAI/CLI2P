@@ -402,3 +402,109 @@ class RandomResizedCrop(object):
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return resized_crop(img, i, j, h, w, self.size, self.interpolation)
+    
+    
+## 增加文本数据增强
+import random 
+import numpy as np
+# from nlpcda import RandomDeleteChar
+
+class Text_aug:
+    def __init__(self, similar_hanzi_path='./db/hanzi_similar_list.txt') -> None:
+        with open(similar_hanzi_path, mode='r', encoding='utf-8') as reader:
+            cons = reader.readlines()
+            self.similar_dict = {}
+            for con in cons:
+                con = con.strip()
+                main_word, similar_word = con.split(' ')       
+                self.similar_dict[main_word] = similar_word
+        # self.deleteor = RandomDeleteChar(create_num=3, change_rate=random_str_delete_prob) 
+        
+    def random_delete(self, sentence, length, mid_prob=0.8, endpoint_prob=0.6):
+        # def delete_prob(index, length, avg_prob=avg_prob):
+        #     # 定义一个概率函数，使得两端的概率较高，中间的概率较低
+        #     # mid = length // 2
+        #     # return avg_prob * ((abs(index - mid) / (mid + 1)) ** 2)
+        #     # -----------------------------------------------
+        #     mid = length // 2
+        #     if length % 2 == 0:
+        #         mid = mid - 0.5  # 确保中间位置正确处理
+        #     distance_to_mid = abs(index - mid)
+        #     return 0.3 * avg_prob * (1-(distance_to_mid / mid) ** 2) + avg_prob
+        def delete_prob(index, length, mid_prob, endpoint_prob):
+            def parabola_points(y1, y2, y3, x1, x2, x3):
+                """ 根据3点坐标, 确定一个抛物线方程系数 """
+                # 构建矩阵方程 Ax = b
+                A = np.array([
+                    [x1**2, x1, 1],
+                    [x2**2, x2, 1],
+                    [x3**2, x3, 1]
+                ])
+                b = np.array([y1, y2, y3])
+                # 解线性方程组
+                a, b, c = np.linalg.solve(A, b)
+                return a, b, c
+    
+            def parabola_function(x, a, b, c):
+                """ 有抛物线的方程系数，确定抛物线方程 """
+                return a * x**2 + b * x + c
+            
+            left_point_x, left_point_y = 0, endpoint_prob
+            mid_point_x, mid_point_y = length/2, mid_prob
+            right_point_x, right_point_y = length, endpoint_prob
+            
+            a, b, c = parabola_points(left_point_y, mid_point_y, right_point_y, left_point_x, mid_point_x, right_point_x)
+            # print(f"抛物线方程参数: a={a}, b={b}, c={c}")
+            
+            y_value = parabola_function(index, a, b, c)
+            return y_value
+        
+        result = []
+        length = len(sentence)
+        
+        for index, char in enumerate(sentence):
+            if random.random() < delete_prob(index, length,mid_prob, endpoint_prob):
+                result.append(char)
+        
+        return ''.join(result)    
+        
+        
+        
+        
+    def random_str_delete(self, sentence, prob=0.1):
+        """ 句子中的字符， 由 prob的概率被删除
+        """
+        new_sentence = ''
+        for str in sentence:
+            if random.random() < prob:
+                continue
+            new_sentence += str
+        return new_sentence
+           
+    def similar_str_replace(self, sentence, prob=0.9):
+        """ 将句子中的汉字， 按照prob的概率替换成相近字, 从形成类似OCR识别错误的数据增强效果， 返回值为数据增后的句子
+        """
+        new_sentence = ''
+        for word in sentence:
+            replace_flag = False
+            if word in self.similar_dict:
+                if random.random() < prob:   
+                    new_sentence += random.choice(self.similar_dict[word])
+                    replace_flag = True
+                    
+            if not replace_flag:
+                new_sentence += word
+        return new_sentence      
+    
+    def __call__(self, sentence, mid_prob=0.9, endpoint_prob=0.7, similar_re_prob=0.1):
+        """ mid_prob: 句子中心字符，保留下来的概率
+            endpoint_prob: 句子的2端字符, 保留下来的概率
+            similar_re_prob: 句子中 相似文字替换的概率
+        """
+        sentence = self.random_delete(sentence, mid_prob, endpoint_prob)
+        sentence = self.similar_str_replace(sentence, similar_re_prob)
+        return sentence
+
+if __name__ == "__main__":
+    Text_auger = Text_aug()     
+    Text_auger('中华人民共和国!!')
