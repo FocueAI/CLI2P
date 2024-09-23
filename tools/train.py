@@ -109,7 +109,7 @@ loss_history = LossHistory(config_global['save_dir'], cli2p_model, input_shape=c
 
 
 lr_schedular = {
-    'StepLR': StepLR(optimizer=optimizer,step_size=6,gamma=0.9), # 每 2 轮 学习率 变成原来的 0.9倍
+    'StepLR': StepLR(optimizer=optimizer,step_size=3,gamma=0.9), # 每 2 轮 学习率 变成原来的 0.9倍
     'ReduceLROnPlateau': ReduceLROnPlateau(optimizer=optimizer, mode='min',factor=0.9, patience=3, eps=1e-10, threshold=1e-3) # 当学习率小于eps之后，学习率将不在调整!!!
     
 }[config_global['lr_schedular_type']]
@@ -134,4 +134,8 @@ for epoch in range(Epoch):
         save_weight_dir = config_global['save_dir'],
         use_cuda = config_global['use_cuda'],
     )
-    lr_schedular.step(val_loss)
+    if config_global['lr_schedular_type'] == 'ReduceLROnPlateau':
+        lr_schedular.step(val_loss)
+    else:
+        lr_schedular.step()
+loss_history.writer.close()

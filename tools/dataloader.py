@@ -7,7 +7,7 @@ from PIL import Image
 from torch.utils.data.dataset import Dataset
 
 from utils import cvtColor, preprocess_input
-from utils_aug import CenterCrop, ImageNetPolicy, RandomResizedCrop, Resize
+from utils_aug import CenterCrop, ImageNetPolicy, RandomResizedCrop, Resize, Text_aug
 from models import tokenize
 
 def rand(a=0, b=1):
@@ -30,6 +30,8 @@ class SiameseDataset(Dataset):
             
             self.resize      = Resize(input_shape[0] if input_shape[0] == input_shape[1] else input_shape)
             self.center_crop = CenterCrop(input_shape)
+            
+        self.text_aug = Text_aug('tools/expore/db/hanzi_similar_list.txt')
 
     def __len__(self):
         return len(self.train_img_lines)
@@ -116,6 +118,9 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]   类别a - 图像
             with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()            #  ----------------------------   类别a - 文本
+                # 加入了文本数据增强功能!!! 
+                text = self.text_aug(text)
+                
             text=tokenize(text,context_length=self.context_length)[0]    
             #------------------------------#
             #   读取图像并转换成RGB图像
@@ -136,6 +141,8 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
             with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()
+                # 加入了文本数据增强功能!!! 
+                text = self.text_aug(text)
             text=tokenize(text,context_length=self.context_length)[0] 
             #------------------------------#
             #   读取图像并转换成RGB图像
