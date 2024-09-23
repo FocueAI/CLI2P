@@ -118,8 +118,9 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2])     #  ------------- path_list[0,2]   类别a - 图像
             with open(text_path_list[pair * 2], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()            #  ----------------------------   类别a - 文本
-                # 加入了文本数据增强功能!!! 
-                text = self.text_aug(text)
+                if self.random:
+                    # 加入了文本数据增强功能!!! 
+                    text = self.text_aug(text)
                 
             text=tokenize(text,context_length=self.context_length)[0]    
             #------------------------------#
@@ -141,8 +142,9 @@ class SiameseDataset(Dataset):
             image = Image.open(img_path_list[pair * 2 + 1])  #  ------------- path_list[1,3]
             with open(text_path_list[pair * 2 + 1], 'r', encoding='utf-8') as reader:
                 text = reader.readline().strip()
-                # 加入了文本数据增强功能!!! 
-                text = self.text_aug(text)
+                if self.random:
+                    # 加入了文本数据增强功能!!! 
+                    text = self.text_aug(text)
             text=tokenize(text,context_length=self.context_length)[0] 
             #------------------------------#
             #   读取图像并转换成RGB图像
@@ -188,7 +190,7 @@ class SiameseDataset(Dataset):
         iw, ih  = image.size
         h, w    = input_shape
 
-        if not random:
+        if not random:  # val
             scale = min(w/iw, h/ih)
             nw = int(iw*scale)
             nh = int(ih*scale)

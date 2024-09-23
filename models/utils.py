@@ -160,7 +160,7 @@ def _convert_to_rgb(image):
 
 def image_transform(image_size=224):
     transform = Compose([
-        Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
+        # Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
         _convert_to_rgb,
         ToTensor(),
         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),

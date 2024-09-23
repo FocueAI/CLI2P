@@ -55,12 +55,12 @@ val_img_lines, val_text_lines, val_labels = load_dataset(config_global["val_data
 
 
 # print(f"train_img_lines:{train_img_lines}")
-
+##### random = True 图像进行复杂的图像增强， =False 图像仅仅做常规的resize处理，文本不做数据增强
 ## 训练数据
-train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, True, autoaugment_flag=False,context_length=config_global["context_length"])
+train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, random=True, autoaugment_flag=False,context_length=config_global["context_length"])
 train_dataloader = DataLoader(train_dataset, batch_size=config_global['batch_size'], shuffle=True, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 ## 训练数据
-val_dataset  = SiameseDataset(config_global['input_shape'], val_img_lines, val_text_lines, val_labels, True, autoaugment_flag=False,context_length=config_global["context_length"])
+val_dataset  = SiameseDataset(config_global['input_shape'], val_img_lines, val_text_lines, val_labels, random=False, autoaugment_flag=False, context_length=config_global["context_length"])
 val_dataloader = DataLoader(val_dataset, batch_size=config_global['batch_size'], shuffle=False, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 
 
