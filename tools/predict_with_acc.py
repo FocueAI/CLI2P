@@ -1,4 +1,6 @@
 import os, torch, json, sys, pathlib, random, copy
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+from PIL import Image
 from tqdm import tqdm
 import numpy as np
 __dir__ = pathlib.Path(os.path.abspath(__file__))
@@ -22,7 +24,7 @@ class Computer_im_text_feature_D:
         self.cli2p_model.load_state_dict(model_dict)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.cli2p_model = self.cli2p_model.to(self.device)
-    def im_resize(self, pil_img,input_shape=(512,512)):
+    def im_resize(self, pil_img,input_shape=(224,224)):
         iw, ih  = pil_img.size
         h, w    = input_shape
         scale = min(w/iw, h/ih)
@@ -34,12 +36,12 @@ class Computer_im_text_feature_D:
         #---------------------------------#
         #   将图像多余的部分加上灰条
         #---------------------------------#
-        image       = image.resize((nw,nh), Image.BICUBIC)
+        image       = pil_img.resize((nw,nh), Image.BICUBIC)
         new_image   = Image.new('RGB', (w,h), (128,128,128))
         new_image.paste(image, (dx, dy))
-        image_data  = np.array(new_image, np.float32)
+        # image_data  = np.array(new_image, np.float32)
 
-        return image_data
+        return new_image
     
     def __call__(self, im_text_pair1_path, im_text_pair2_path, label=torch.tensor([1]), return_f = False):
         # 读取第1组 图文对
@@ -72,7 +74,7 @@ class Computer_im_text_feature_D:
 if __name__ == "__main__":
     im_distance_computer = Computer_im_text_feature_D()
     # ----------------------------------------------------------------------- #    
-    img_dir = r"datasets_book_spine/train"  
+    img_dir = r"datasets_book_spine/test"  
     all_img_dir = [os.path.join(img_dir, i) for i in os.listdir(img_dir) ]
     random.shuffle(all_img_dir)
     # print(all_img_dir)
@@ -126,6 +128,7 @@ if __name__ == "__main__":
 
 ############### 测试结果 ###############
 """
+---- model_weight_9_19
 test-acc: 0.94575963
 val-acc:  0.9409542871900828
 train-acc: 0.940823823225139
