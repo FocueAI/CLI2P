@@ -16,18 +16,25 @@ class CLI2P(nn.Module):
         super().__init__()
         self.feature_mix = nn.Sequential(
             # 自编码器-编码器部分
-            nn.Linear(1024, 512),  # 将1024维输入编码到512维潜在空间
+            nn.Linear(1024, 2048),  # 将1024维输入编码到512维潜在空间
             nn.ReLU(),
-            nn.Linear(512, 256),
+            # nn.Dropout(0.5),  # 添加 Dropout
+            nn.Linear(2048, 1024),
             nn.ReLU(),
-            nn.Linear(256, 128),  # 潜在空间维度为128
+            # nn.Dropout(0.5),  # 添加 Dropout
+            nn.Linear(1024, 512),  # 潜在空间维度为128
             # 自编码器-解码器部分
-            nn.Linear(128, 256),
+            nn.Linear(512, 1024),
             nn.ReLU(),
-            nn.Linear(256, 512),
+            # nn.Dropout(0.5),  # 添加 Dropout
+            nn.Linear(1024, 2048),
             nn.ReLU(),
-            nn.Linear(512, 1024),  # 将潜在空间重构回1024维
-            nn.Sigmoid() 
+            # nn.Dropout(0.5),  # 添加 Dropout
+            nn.Linear(2048, 1024),  # 将潜在空间重构回1024维
+            nn.ReLU(),
+            # nn.Dropout(0.5),  # 添加 Dropout
+            nn.Linear(1024, 1024),
+            # nn.Sigmoid() 
             
         ) # .to(torch.float16)
         self.__dict__.update(self._defaults) # 新更新默认参数
