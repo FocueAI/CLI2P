@@ -10,6 +10,25 @@ from tools.contrastive import ContrastiveLoss
 from PIL import Image
 from models.cli2p import CLI2P
 from utils import letterbox_image
+from models import  tokenize
+
+
+###########################
+from torchvision.transforms import Compose, ToTensor, Normalize, Resize, InterpolationMode
+def _convert_to_rgb(image):
+    return image.convert('RGB')
+
+
+def image_transform(image_size=224):
+    transform = Compose([
+        Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
+        _convert_to_rgb,
+        ToTensor(),
+        Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    ])
+    return transform
+
+#########################################
 
 class Computer_im_text_feature_D:
     """
@@ -27,20 +46,22 @@ class Computer_im_text_feature_D:
                 "bert_freeze_last_layers": 0    # 0:代表都冻结了
             
         }
-        
-        self.cli2p_model = CLI2P(**config) 
-        self.cli2p_model.load_state_dict(model_dict)
-        # ## -------------------------- 模型转换 begin---------------------------- ##
-        self.cli2p_model = self.cli2p_model.cuda(0).eval()
-        im_input_dummy = torch.randn(1,3,224,224).type(torch.FloatTensor).cuda(0)
-        text_input_dummy = torch.ones(1, 120).type(torch.LongTensor).cuda(0)
-        # traced_model = torch.jit.script(self.cli2p_model, (im_input_dummy, text_input_dummy))
-        traced_model = torch.jit.trace(self.cli2p_model, (im_input_dummy, text_input_dummy))
-        traced_model.save("CLI2P.pt")
-        print(f'model transform over ......')
-        # ## -------------------------- 模型转换 end---------------------------- ##
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.cli2p_model = self.cli2p_model.to(self.device)
+        # self.cli2p_model = CLI2P(**config) 
+        # self.cli2p_model.load_state_dict(model_dict)
+        # =# -------------------------- 模型转换 begin---------------------------- ##
+        # self.cli2p_model.cpu().eval()
+        # im_input_dummy = torch.randn(1,3,224,224).type(torch.FloatTensor)
+        # text_input_dummy = torch.ones(1, 120).type(torch.LongTensor)
+        # # traced_model = torch.jit.script(self.cli2p_model, (im_input_dummy, text_input_dummy))
+        # traced_model = torch.jit.trace(self.cli2p_model, (im_input_dummy, text_input_dummy))
+        # traced_model.save("mnist-epoch-8-acc-0.9895-traced-model.pt")
+        
+        self.cli2p_model = torch.jit.load("CLI2P.pt", map_location=self.device)
+        ## -------------------------- 模型转换 end---------------------------- ##
+        
+        # self.cli2p_model = self.cli2p_model.to(self.device)
+        self.im_transform = image_transform()
     def im_resize(self, pil_img,input_shape=(224,224)):
         iw, ih  = pil_img.size
         h, w    = input_shape
@@ -78,12 +99,12 @@ class Computer_im_text_feature_D:
         with open(im_text_pair2_path[1], 'r', encoding='utf-8') as reader:
             text_2_con = reader.readline().strip()
 
-        img_1 = self.cli2p_model.img_preprocessor(pil_img_1).unsqueeze(0).to(self.device)
-        img_2 = self.cli2p_model.img_preprocessor(pil_img_2).unsqueeze(0).to(self.device)
+        img_1 = self.im_transform(pil_img_1).unsqueeze(0).to(self.device)
+        img_2 = self.im_transform(pil_img_2).unsqueeze(0).to(self.device)
 
 
-        text1 = self.cli2p_model.text_preprocessor(text_1_con,context_length=120).to(self.device)
-        text2 = self.cli2p_model.text_preprocessor(text_2_con,context_length=120).to(self.device)
+        text1 = tokenize(text_1_con,context_length=120).to(self.device)
+        text2 = tokenize(text_2_con,context_length=120).to(self.device)
         self.cli2p_model.eval()
         with torch.no_grad():
             mix_feat1 = self.cli2p_model(img_1, text1)
