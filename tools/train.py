@@ -66,7 +66,9 @@ val_dataloader = DataLoader(val_dataset, batch_size=config_global['batch_size'],
 
 # step2：模型加载模块
 config = {
-    "freeze_flag": True
+    "freeze_flag": True,
+    "visual_freeze_last_layers": 14,
+    "bert_freeze_last_layers": 16
 }
 cli2p_model = CLI2P(**config) 
 if config_global['use_cuda']:

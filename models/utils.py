@@ -82,7 +82,7 @@ def available_models() -> List[str]:
 
 
 def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu",
-                   download_root: str = None, vision_model_name: str = None, text_model_name: str = None, input_resolution: int = None, freeze_flag: bool = True):
+                   download_root: str = None, vision_model_name: str = None, text_model_name: str = None, input_resolution: int = None, freeze_flag: bool = True, **kwargs):
     if name in _MODELS:
         model_path = _download(_MODELS[name], download_root or os.path.expanduser("~/.cache/clip"))
         model_name, model_input_resolution = _MODEL_INFO[name]['struct'], _MODEL_INFO[name]['input_resolution']
@@ -106,8 +106,8 @@ def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch
         # ---------------------------------------------------------------- 冻结参数 -- 视觉
         visual_total_layers = len(list(model.visual.parameters()))
         # 计算最后冻结层的起始索引
-        visual_freeze_layers_start = max(0, visual_total_layers - 14)
-        
+        # visual_freeze_layers_start = max(0, visual_total_layers - 14)
+        visual_freeze_layers_start = max(0, visual_total_layers - kwargs["visual_freeze_last_layers"])
         for i, param in enumerate(model.visual.parameters()):
             if i < visual_freeze_layers_start:     # 之前的层 给冻结住
                 param.requires_grad = False  
@@ -121,7 +121,8 @@ def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch
         # ----------------------------------------------------------------- 冻结参数 -- bert
         bert_total_layers = len(list(model.bert.parameters()))
         # 计算最后冻结层的起始位置
-        bert_freeze_layers_start = max(0, bert_total_layers - 16)
+        # bert_freeze_layers_start = max(0, bert_total_layers - 16)
+        bert_freeze_layers_start = max(0, bert_total_layers - kwargs["bert_freeze_last_layers"])
         for i, param in enumerate(model.bert.parameters()):
             if i < bert_freeze_layers_start:     # 之前的层 给冻结住
                 param.requires_grad = False  

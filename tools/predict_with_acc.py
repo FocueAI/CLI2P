@@ -21,7 +21,14 @@ class Computer_im_text_feature_D:
         """
         model_path = os.path.join(weights_dir, "best_epoch_weights.pth")
         model_dict = torch.load(model_path)
-        self.cli2p_model = CLI2P({}) 
+        config = {
+                "freeze_flag": True,
+                "visual_freeze_last_layers": 10000, # 设置很大的值，代表都冻结了
+                "bert_freeze_last_layers": 10000    # 设置很大的值，代表都冻结了
+            
+        }
+        
+        self.cli2p_model = CLI2P(**{}) 
         self.cli2p_model.load_state_dict(model_dict)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.cli2p_model = self.cli2p_model.to(self.device)
