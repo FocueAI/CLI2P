@@ -11,6 +11,9 @@ from PIL import Image
 from models.cli2p import CLI2P
 from utils import letterbox_image
 
+jit_model_transform = False
+
+
 class Computer_im_text_feature_D:
     """
     计算 图文联合特征之间的距离的类
@@ -30,15 +33,16 @@ class Computer_im_text_feature_D:
         
         self.cli2p_model = CLI2P(**config) 
         self.cli2p_model.load_state_dict(model_dict)
-        # ## -------------------------- 模型转换 begin---------------------------- ##
-        self.cli2p_model = self.cli2p_model.cuda(0).eval()
-        im_input_dummy = torch.randn(1,3,224,224).type(torch.FloatTensor).cuda(0)
-        text_input_dummy = torch.ones(1, 120).type(torch.LongTensor).cuda(0)
-        # traced_model = torch.jit.script(self.cli2p_model, (im_input_dummy, text_input_dummy))
-        traced_model = torch.jit.trace(self.cli2p_model, (im_input_dummy, text_input_dummy))
-        traced_model.save("CLI2P.pt")
-        print(f'model transform over ......')
-        # ## -------------------------- 模型转换 end---------------------------- ##
+        if jit_model_transform:
+            # ## -------------------------- 模型转换 begin---------------------------- ##
+            self.cli2p_model = self.cli2p_model.cuda(0).eval()
+            im_input_dummy = torch.randn(1,3,224,224).type(torch.FloatTensor).cuda(0)
+            text_input_dummy = torch.ones(1, 120).type(torch.LongTensor).cuda(0)
+            # traced_model = torch.jit.script(self.cli2p_model, (im_input_dummy, text_input_dummy))
+            traced_model = torch.jit.trace(self.cli2p_model, (im_input_dummy, text_input_dummy))
+            traced_model.save("CLI2P.pt")
+            print(f'model transform over ......')
+            # ## -------------------------- 模型转换 end---------------------------- ##
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.cli2p_model = self.cli2p_model.to(self.device)
     def im_resize(self, pil_img,input_shape=(224,224)):
@@ -157,8 +161,8 @@ train-acc: 0.940823823225139
 ---- model_weight_9_23  # 被弄坏了
 test-acc: 0.9499319727891151
 
-
----- model_weight_9_24  使用中间过程训练的结果!!!!
+ 
+---- model_weight_9_24 ----------- best_epoch_weights_epoch:58_val_loss:0.3087323583938457_.pth
 test-acc: 0.9608163265306117
 
 
