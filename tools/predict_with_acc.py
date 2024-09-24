@@ -75,7 +75,7 @@ class Computer_im_text_feature_D:
 
         text1 = self.cli2p_model.text_preprocessor(text_1_con,context_length=120).to(self.device)
         text2 = self.cli2p_model.text_preprocessor(text_2_con,context_length=120).to(self.device)
-
+        self.cli2p_model.eval()
         with torch.no_grad():
             mix_feat1 = self.cli2p_model(img_1, text1)
             mix_feat2 = self.cli2p_model(img_2, text2)
