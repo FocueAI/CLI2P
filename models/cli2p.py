@@ -33,7 +33,7 @@ class CLI2P(nn.Module):
         self.__dict__.update(self._defaults) # 新更新默认参数
         self.__dict__.update(kwargs)     # 在更新传入参数
         # 图文提取器            图像前处理器
-        self.feat_extrator, self.img_preprocessor = load_from_name(self.model_name, device=self.device, download_root=self.download_root, freeze_flag=self.freeze_flag, **kwargs)
+        self.feat_extrator, self.img_preprocessor = load_from_name(self.model_name, device=self.device, download_root=self.download_root, freeze_kwargs=kwargs)
         self.text_preprocessor = tokenize
         self._initialize_weights()  # 这个是含必要的
     def _initialize_weights(self):

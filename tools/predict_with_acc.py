@@ -15,7 +15,7 @@ class Computer_im_text_feature_D:
     """
     计算 图文联合特征之间的距离的类
     """
-    def __init__(self, weights_dir=r'./model_weight_9_23') -> None:
+    def __init__(self, weights_dir=r'./model_weight_9_24') -> None:   # model_weight_9_23的权重废了
         """
         加载权重， 初始化模型示例
         """
@@ -23,12 +23,12 @@ class Computer_im_text_feature_D:
         model_dict = torch.load(model_path)
         config = {
                 "freeze_flag": True,
-                "visual_freeze_last_layers": 10000, # 设置很大的值，代表都冻结了
-                "bert_freeze_last_layers": 10000    # 设置很大的值，代表都冻结了
+                "visual_freeze_last_layers": 0, # 0:代表都冻结了
+                "bert_freeze_last_layers": 0    # 0:代表都冻结了
             
         }
         
-        self.cli2p_model = CLI2P(**{}) 
+        self.cli2p_model = CLI2P(**config) 
         self.cli2p_model.load_state_dict(model_dict)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.cli2p_model = self.cli2p_model.to(self.device)
@@ -145,9 +145,16 @@ test-acc: 0.94575963
 val-acc:  0.9409542871900828
 train-acc: 0.940823823225139
 
----- model_weight_9_23
+---- model_weight_9_23  # 被弄坏了
 test-acc: 0.9499319727891151
+
+
+---- model_weight_9_24  使用中间过程训练的结果!!!!
+test-acc: 0.9608163265306117
+
+
 """
+
 #########################################
 
 
