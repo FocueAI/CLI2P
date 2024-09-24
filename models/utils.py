@@ -97,15 +97,51 @@ def load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch
         # loading saved checkpoint
         checkpoint = torch.load(opened_file, map_location="cpu")
 
-    model = create_model(model_name, checkpoint)
+    model = create_model(model_name, checkpoint)  # 将float32 -----> float16 的参数转换给关掉了!!!!!!
     if str(device) == "cpu":
         model.float()
     else:
         model.to(device)
     if freeze_flag:
-        # 冻结参数
-        for param in model.parameters():
-            param.requires_grad = False
+        # ---------------------------------------------------------------- 冻结参数 -- 视觉
+        visual_total_layers = len(list(model.visual.parameters()))
+        # 计算最后冻结层的起始索引
+        visual_freeze_layers_start = max(0, visual_total_layers - 14)
+        
+        for i, param in enumerate(model.visual.parameters()):
+            if i < visual_freeze_layers_start:     # 之前的层 给冻结住
+                param.requires_grad = False  
+            else:
+                param.requires_grad = True 
+        # # 确保最后三层可以训练
+        # for param in model.visual.parameters()[freeze_layers_start:]:
+        #     param.requires_grad = True
+    
+        
+        # ----------------------------------------------------------------- 冻结参数 -- bert
+        bert_total_layers = len(list(model.bert.parameters()))
+        # 计算最后冻结层的起始位置
+        bert_freeze_layers_start = max(0, bert_total_layers - 16)
+        for i, param in enumerate(model.bert.parameters()):
+            if i < bert_freeze_layers_start:     # 之前的层 给冻结住
+                param.requires_grad = False  
+            else:
+                param.requires_grad = True 
+        
+        
+        
+        
+        
+        
+         
+         
+        # for param in model.bert.parameters():
+        #     pass         
+        
+        
+        
+        # for param in model.parameters():
+        #     param.requires_grad = False
     return model, image_transform(model_input_resolution)
 
 
@@ -160,7 +196,7 @@ def _convert_to_rgb(image):
 
 def image_transform(image_size=224):
     transform = Compose([
-        # Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
+        Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
         _convert_to_rgb,
         ToTensor(),
         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
@@ -189,7 +225,7 @@ def create_model(model_name, checkpoint=None):
         model_info['vision_layers'] = eval(model_info['vision_layers'])
     print('Model info', model_info)
     model = CLIP(**model_info) # 引入关键性 模型
-    convert_weights(model)
+    # convert_weights(model)   # 将float32 -----> float16
     if checkpoint:
         sd = checkpoint["state_dict"]
         if next(iter(sd.items()))[0].startswith('module'):

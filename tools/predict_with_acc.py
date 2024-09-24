@@ -9,12 +9,13 @@ sys.path.append(str(__dir__.parent.parent))
 from tools.contrastive import ContrastiveLoss
 from PIL import Image
 from models.cli2p import CLI2P
+from utils import letterbox_image
 
 class Computer_im_text_feature_D:
     """
     计算 图文联合特征之间的距离的类
     """
-    def __init__(self, weights_dir=r'./model_weight_9_19') -> None:
+    def __init__(self, weights_dir=r'./model_weight_9_23') -> None:
         """
         加载权重， 初始化模型示例
         """
@@ -47,13 +48,17 @@ class Computer_im_text_feature_D:
         # 读取第1组 图文对
         pil_img_1 = Image.open(im_text_pair1_path[0])
         #############
-        pil_img_1 = self.im_resize(pil_img_1)
+        # pil_img_1 = self.im_resize(pil_img_1)
+        # pil_img_1 = letterbox_image(pil_img_1, (244,244), False)
         
         with open(im_text_pair1_path[1], 'r', encoding='utf-8') as reader:
             text_1_con = reader.readline().strip()
         # 读取第2组 图文对
         pil_img_2 = Image.open(im_text_pair2_path[0])
-        pil_img_2 = self.im_resize(pil_img_2)
+        # pil_img_2 = self.im_resize(pil_img_2)
+        # pil_img_2 = letterbox_image(pil_img_2, (244,244), False)
+        
+        
         with open(im_text_pair2_path[1], 'r', encoding='utf-8') as reader:
             text_2_con = reader.readline().strip()
 
@@ -132,6 +137,9 @@ if __name__ == "__main__":
 test-acc: 0.94575963
 val-acc:  0.9409542871900828
 train-acc: 0.940823823225139
+
+---- model_weight_9_23
+test-acc: 0.9499319727891151
 """
 #########################################
 

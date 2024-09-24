@@ -9,7 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "tools/train.py",
-            "pythonPath": "D:/anaconda/envs/pt/python.exe",
+            "pythonPath": "/home/lenovo/anaconda3/envs/pt/bin/python",
             "console": "integratedTerminal"
         }
     ]
