@@ -13,7 +13,7 @@
 - ✅ 模型损失代码  
 - ✅ 模型推理代码 
 - ✅ 模型转换代码  （predict_with_acc.py 完成模型转换 ------ predict_with_acc_jit.py 完成转换后模型的使用）    
-- ❌ 引入faiss模块 
+- ✅ 引入faiss模块  https://github.com/FocueAI/CLI2P-inference-with-faiss.git
 - ❌ 博客介绍
 
 ### 数据准备：
