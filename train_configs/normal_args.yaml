@@ -4,15 +4,17 @@ Global:
   # 模型保存的位置
   save_dir: './model_weight_9_24'
   # 训练集数据地址
-  train_dataset_path: 'datasets_book_spine/train'
+  # train_dataset_path: 'datasets_book_spine/train'
+  train_dataset_path: 'dataset'
   # 验证集数据地址
-  val_dataset_path: 'datasets_book_spine/val'
+  # val_dataset_path: 'datasets_book_spine/val'
+  val_dataset_path: 'dataset'
   # 图像编码器的输入尺寸
   input_shape: [224, 224]
   # 文本编码器的文本长度
   context_length: 120
   # batch大小
-  batch_size: 32
+  batch_size: 2
   # 优化器的类型 ['adam' , 'sgd']
   optimizer_type: 'adam'
   # 学习率调整策略 ['StepLR','ReduceLROnPlateau']
