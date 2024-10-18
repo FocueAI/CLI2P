@@ -278,13 +278,13 @@ class VisualTransformer(nn.Module):
         x = x.permute(1, 0, 2)  # NLD -> LND      x.shape = [seq_len=197, batch=1, d_model=768]
         x = self.transformer(x) #                 x.shape = [seq_len=197, batch=1, d_model=768]  经过transformer, 输入输出 的shape 保持不变 
         x = x.permute(1, 0, 2)  # LND -> NLD      x.shape = [batch=1, seq_len=197, d_model=768]   
-
+        tmp_x_feature = x  # TODO: fix on 2024-10-18
         x = self.ln_post(x[:, 0, :]) # x[:,0,:].shape=[1, 768] （至于为什么是取seq中的0号位置的元素，请参照vit原论文）=====> LayerNorm 基操
 
         if self.proj is not None:   # self.proj.shape = [768, 512]
             x = x @ self.proj       # [1, 768] @ [768, 512] ===> [1,512] 相当于全连接操作!!
 
-        return x  # x.shape = [1, 512]
+        return x, tmp_x_feature  # x.shape = [1, 512], tmp_x_feature.shape = [batch=1, seq_len=197, d_model=768] TODO: add tmp_x_feature on 2024-10-18
 
 
 class CLIP(nn.Module):
@@ -391,13 +391,13 @@ class CLIP(nn.Module):
         if isinstance(self.visual, ModifiedResNet):
             # mask_ratio > 0 (FLIP strategy) is currently only implemented for VisualTransformer.
             return self.visual(image.type(self.dtype))
-        return self.visual(image.type(self.dtype), mask_ratio)
+        return self.visual(image.type(self.dtype), mask_ratio) # go this way!!!  
 
     def encode_text(self, text):                                  # ------------------------------------------------------------------ 文本编码器
         pad_index = self.tokenizer.vocab['[PAD]'] # 0
         attn_mask = text.ne(pad_index).type(self.dtype)  # 将 非 pading的部分设置为1， padding部分设置为0
         x = self.bert(text, attention_mask=attn_mask)[0].type(self.dtype) # text.shape=[1, 52], attn_mask.shape=[1,52] ================> x.shape=[1,52,768]
-        return x[:, 0, :] @ self.text_projection # [1,768] @ [768, 512] ====> [1, 512]
+        return x[:, 0, :] @ self.text_projection, x # [1,768] @ [768, 512] ====> [1, 512] TODO: add x (x.shape=torch.Size([batch=4, 句子统一长度=120, d_model=768])) on 2024-10-18
 
     def forward(self, image, text, mask_ratio=0):
         assert image is not None or text is not None, "text and image cannot both be None!"

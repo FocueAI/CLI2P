@@ -5,12 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
+            "name": "Python Debugger",
             "type": "debugpy",
             "request": "launch",
-            // "program": "tools/train.py",
-            "program": "tools/predict_with_acc_jit.py",
-            "pythonPath": "/home/lenovo/anaconda3/envs/pt/bin/python",
+            "program": "tools/train.py",
+            // "program": "tools/predict_with_acc_jit.py",
+            // "pythonPath": "/home/lenovo/anaconda3/envs/pt/bin/python",
+            "pythonPath": "D:/anaconda/envs/pt/python.exe",
             "console": "integratedTerminal"
         }
     ]

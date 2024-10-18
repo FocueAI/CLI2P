@@ -2,7 +2,7 @@ Global:
   # 是否使用cuda
   use_cuda: True
   # 模型保存的位置
-  save_dir: './model_weight_9_24'
+  save_dir: './model_weight_10_18'
   # 训练集数据地址
   # train_dataset_path: 'datasets_book_spine/train'
   train_dataset_path: 'dataset'
@@ -20,7 +20,7 @@ Global:
   # 学习率调整策略 ['StepLR','ReduceLROnPlateau']
   lr_schedular_type: 'StepLR'
   # 是否使用多线程读取数据，0代表关闭多线程
-  num_workers: 16
+  num_workers: 0
   # 是否使用DDP模式训练数据
   distributed: False
   # 是否使用预训练权重

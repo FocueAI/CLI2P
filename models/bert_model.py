@@ -440,7 +440,7 @@ class BertModel(BertPreTrainedModel):
         if attention_mask is None: # .shape=[1, 52]
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
+            token_type_ids = torch.zeros_like(input_ids) # input_ids.shape=torch.Size([batch=4, context_length=120])
 
         # We create a 3D attention mask from a 2D tensor mask.
         # Sizes are [batch_size, 1, 1, to_seq_length]
@@ -472,11 +472,11 @@ class BertModel(BertPreTrainedModel):
         else: # go this way！
             head_mask = [None] * self.config.num_hidden_layers  # self.config.num_hidden_layers=12
 
-        embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids) # embedding_output.shape=[batch=1, 句子统一长度=52, d_model=768]
-        encoder_outputs = self.encoder(embedding_output,           
+        embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids) # embedding_output.shape=[batch=1, 句子统一长度=120, d_model=768]
+        encoder_outputs = self.encoder(embedding_output,      #   len(encoder_outputs)=1     
                                        extended_attention_mask,
                                        head_mask=head_mask)
-        sequence_output = encoder_outputs[0]
+        sequence_output = encoder_outputs[0]  # sequence_output.shape=torch.Size([batch=4, 句子统一长度=120, d_model=768])
         # pooled_output = self.pooler(sequence_output)
         pooled_output = None
 

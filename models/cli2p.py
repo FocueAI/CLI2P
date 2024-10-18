@@ -64,8 +64,10 @@ class CLI2P(nn.Module):
             return self.feat_extrator.encode_text(text)
         elif text is None:
             return self.feat_extrator.encode_image(image)
-        image_features = self.feat_extrator.encode_image(image, self.mask_ratio)
-        text_features = self.feat_extrator.encode_text(text)
+        # [4,512],       [4, 197, 768]
+        image_features, image_features_3d = self.feat_extrator.encode_image(image, self.mask_ratio) # image.shape=torch.Size([4, 3, 224, 224])
+        # [4,512],      [4, 120, 768]
+        text_features, text_features_3d = self.feat_extrator.encode_text(text) # text.shape=torch.Size([4, 120])
 
         image_features = image_features / image_features.norm(dim=-1, keepdim=True) # .shape=(1, 512)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)    # .shape=(1, 512)
