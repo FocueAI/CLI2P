@@ -1,7 +1,7 @@
 # 打算仿写 Q-former 实现该逻辑、
 import torch
 from torch import nn
-from transformers import BertModel
+# from transformers import BertModel
 
 class MultiModalTransformer(nn.Module):
     def __init__(self,  hidden_dim=768, num_classes=1024):
