@@ -2,7 +2,7 @@ Global:
   # 是否使用cuda
   use_cuda: True
   # 模型保存的位置
-  save_dir: './model_weight_10_18'
+  save_dir: './model_weight_10_21'
   # 训练集数据地址
   train_dataset_path: 'datasets_book_spine/train'
   # train_dataset_path: 'dataset'
@@ -14,7 +14,9 @@ Global:
   # 文本编码器的文本长度
   context_length: 120
   # batch大小
-  batch_size: 128
+  batch_size: 32
+  # 图像编码器器mask的比例
+  mask_ratio: 0.4
   # 优化器的类型 ['adam' , 'sgd']
   optimizer_type: 'adam'
   # 学习率调整策略 ['StepLR','ReduceLROnPlateau']

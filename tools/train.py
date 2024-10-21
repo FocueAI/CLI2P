@@ -57,7 +57,7 @@ val_img_lines, val_text_lines, val_labels = load_dataset(config_global["val_data
 # print(f"train_img_lines:{train_img_lines}")
 ##### random = True 图像进行复杂的图像增强， =False 图像仅仅做常规的resize处理，文本不做数据增强
 ## 训练数据
-train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, random=True, autoaugment_flag=False,context_length=config_global["context_length"])
+train_dataset  = SiameseDataset(config_global['input_shape'], train_img_lines, train_text_lines, train_labels, random=True, autoaugment_flag=True,context_length=config_global["context_length"])
 train_dataloader = DataLoader(train_dataset, batch_size=config_global['batch_size'], shuffle=True, collate_fn=dataset_collate, num_workers=config_global['num_workers'], pin_memory=True)
 ## 训练数据
 val_dataset  = SiameseDataset(config_global['input_shape'], val_img_lines, val_text_lines, val_labels, random=False, autoaugment_flag=False, context_length=config_global["context_length"])
@@ -70,6 +70,8 @@ config = {
     "visual_freeze_last_layers": 14,
     "bert_freeze_last_layers": 16
 }
+config.update(config_global)
+
 cli2p_model = CLI2P(**config) 
 if config_global['use_cuda']:
     cli2p_model = cli2p_model.cuda()
@@ -98,7 +100,7 @@ loss_fn = contrastive.ContrastiveLoss()
 # step4: 优化器的选择
 Init_lr_fit = 3e-5
 momentum      = 0.9
-weight_decay  = 0
+weight_decay  = 1e-4
 optimizer = {
     'adam'  : optim.Adam(cli2p_model.parameters(), Init_lr_fit, betas = (momentum, 0.999), weight_decay = weight_decay),
     'sgd'   : optim.SGD(cli2p_model.parameters(), Init_lr_fit, momentum=momentum, nesterov=True, weight_decay = weight_decay)

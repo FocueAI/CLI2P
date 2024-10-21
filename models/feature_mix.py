@@ -15,9 +15,10 @@ class MultiModalTransformer(nn.Module):
             d_model=hidden_dim,
             nhead=8,
             dim_feedforward=hidden_dim * 4,
-            dropout=0.1,
+            # dropout=0.1,
+            dropout=0.5,
         )
-        
+        self.encoder = nn.TransformerEncoder(self.transformer_layers , num_layers=8)
         # 位置编码，维度为(max_position_embeddings, hidden_dim)
         self.position_embedding = nn.Embedding(512, hidden_dim)
         
@@ -29,10 +30,13 @@ class MultiModalTransformer(nn.Module):
         text_features: [bs=4, len=120, d_model=768] 
         im_features:   [bs=4, len=197, d_model=768]	
         """
-        image_features = image_features[:,0,:] # [bs=4, d_model=768]	
+        # image_features = image_features[:,0,:] # [bs=4, d_model=768]	
         # 合并文本和图像特征，假设图像特征被复制以匹配文本序列的长度
         # 输出维度为(batch_size, sequence_length + 1, hidden_dim)  经过下一行的代码， cat中的2个元素的维度，分别都为： .shape =(4, 120, 768)
-        combined_features = torch.cat((text_features, image_features.unsqueeze(1).repeat(1, text_features.size(1), 1)), dim=1)  # 在长度上做拼接 .shape=(2, 240, 768)
+        # combined_features = torch.cat((text_features, image_features.unsqueeze(1).repeat(1, text_features.size(1), 1)), dim=1)  # 在长度上做拼接 .shape=(2, 240, 768)
+        combined_features = torch.cat((text_features, image_features), dim=1) # [bs=4, len=197+120=317, d_model=768]	
+        
+        
         
         # 添加位置编码，位置编码的维度为(1, sequence_length + 1, hidden_dim)
         position_ids = torch.arange(combined_features.size(1), device=combined_features.device)  # .shape=(240,)
@@ -40,7 +44,9 @@ class MultiModalTransformer(nn.Module):
         combined_features += position_embeddings                    # .shape=(4, 240, 768)
         
         # 通过Transformer层，输入维度为(sequence_length + 1, batch_size, hidden_dim)
-        transformer_output = self.transformer_layers(combined_features.transpose(0, 1)).transpose(0, 1) # .shape=(4, 240, 768)
+        # transformer_output = self.transformer_layers(combined_features.transpose(0, 1)).transpose(0, 1) # .shape=(4, 240, 768)
+        transformer_output = self.encoder(combined_features.transpose(0, 1)).transpose(0, 1)  
+        
         
         # 特征融合，取Transformer输出的第一个token（分类token）作为序列的表示
         # 输出维度为(batch_size, hidden_dim)

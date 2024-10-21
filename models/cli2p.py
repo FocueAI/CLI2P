@@ -9,7 +9,7 @@ class CLI2P(nn.Module):
         "model_name": "ViT-B-16",
         "device": 'cuda',
         "download_root": './',   # 如果下载模型权重，应该保存的路径
-        "mask_ratio": 0
+        "mask_ratio": 0.3
     }
     
     def __init__(self, **kwargs):
@@ -63,9 +63,9 @@ class CLI2P(nn.Module):
         assert image is not None or text is not None, "text and image cannot both be None!"
 
         if image is None:
-            return self.feat_extrator.encode_text(text)
+            return self.feat_extrator.encode_text(text,)
         elif text is None:
-            return self.feat_extrator.encode_image(image)
+            return self.feat_extrator.encode_image(image, self.mask_ratio)
         # [4,512],       [4, 197, 768]
         image_features, image_features_3d = self.feat_extrator.encode_image(image, self.mask_ratio) # image.shape=torch.Size([4, 3, 224, 224])
         # [4,512],      [4, 120, 768]
