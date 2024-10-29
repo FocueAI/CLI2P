@@ -18,17 +18,17 @@ class Computer_im_text_feature_D:
     """
     计算 图文联合特征之间的距离的类
     """
-    def __init__(self, weights_dir=r'./model_weight_9_24') -> None:   # model_weight_9_23的权重废了
+    def __init__(self, weights_dir=r'./model_weight_10_21') -> None:   # model_weight_9_23的权重废了
         """
         加载权重， 初始化模型示例
         """
-        model_path = os.path.join(weights_dir, "best_epoch_weights.pth")
+        model_path = os.path.join(weights_dir, "best_epoch_weights_0.985.pth")
         model_dict = torch.load(model_path)
         config = {
                 "freeze_flag": True,
                 "visual_freeze_last_layers": 0, # 0:代表都冻结了
-                "bert_freeze_last_layers": 0    # 0:代表都冻结了
-            
+                "bert_freeze_last_layers": 0,    # 0:代表都冻结了
+                "mask_ratio": 0.0
         }
         
         self.cli2p_model = CLI2P(**config) 
