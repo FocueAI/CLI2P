@@ -32,3 +32,6 @@
 ---------...   
 ---------图像n   
 ---------图像n的ocr结果  
+
+
+参考：https://github.com/OFA-Sys/Chinese-CLIP
